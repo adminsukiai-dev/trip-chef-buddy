@@ -2,6 +2,9 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowLeft, Clock, CreditCard, MapPin, Check, Gift, Wine } from 'lucide-react';
 import { useCartStore } from '@/store/cartStore';
+import { useAuth } from '@/hooks/useAuth';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 import confetti from 'canvas-confetti';
 
 type CheckoutStep = 'delivery' | 'payment' | 'confirmed';
