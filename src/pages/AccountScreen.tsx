@@ -157,6 +157,7 @@ const AccountScreen = () => {
   const { user, loading, signOut } = useAuth();
   const [showAuth, setShowAuth] = useState(false);
   const [showProfileFamily, setShowProfileFamily] = useState(false);
+  const [showFavorites, setShowFavorites] = useState(false);
   const [profile, setProfile] = useState<{ display_name: string | null; avatar_url: string | null }>({ display_name: null, avatar_url: null });
 
   const fetchProfile = useCallback(async () => {
