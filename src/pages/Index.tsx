@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Leaf, Users, CalendarDays, MapPin, ChevronRight } from 'lucide-react';
 import BottomNav from '@/components/BottomNav';
@@ -9,6 +9,23 @@ import CheckoutScreen from '@/pages/CheckoutScreen';
 import OrdersScreen from '@/pages/OrdersScreen';
 import AccountScreen from '@/pages/AccountScreen';
 import { ORLANDO_RESORTS } from '@/data/products';
+
+/* ─── Typewriter Effect ─── */
+const Typewriter = ({ text, delay = 0 }: { text: string; delay?: number }) => {
+  const [displayed, setDisplayed] = useState('');
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+      let i = 0;
+      const interval = setInterval(() => {
+        setDisplayed(text.slice(0, ++i));
+        if (i >= text.length) clearInterval(interval);
+      }, 45);
+      return () => clearInterval(interval);
+    }, delay * 1000);
+    return () => clearTimeout(timeout);
+  }, [text, delay]);
+  return <>{displayed}<span className="animate-pulse">|</span></>;
+};
 
 /* ─── Trip Setup Step Components ─── */
 const ResortStep = ({ onComplete }: { onComplete: (resort: string) => void }) => {
@@ -179,8 +196,10 @@ const SplashScreen = ({ onStart }: { onStart: (mode: string) => void }) => {
             <div className="text-center">
               <motion.h1 initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}
                 className="text-4xl font-display font-bold text-white tracking-tight">Garden Grocer</motion.h1>
-              <motion.p initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.35 }}
-                className="text-white/40 text-sm mt-2 font-light tracking-wide">Your AI vacation kitchen concierge</motion.p>
+              <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.35 }}
+                className="text-white/40 text-sm mt-2 font-light tracking-wide">
+                <Typewriter text="Your AI vacation kitchen concierge" delay={0.6} />
+              </motion.p>
             </div>
 
             <motion.div initial={{ y: 30, opacity: 0 }} animate={{ y: 0, opacity: 1 }}
