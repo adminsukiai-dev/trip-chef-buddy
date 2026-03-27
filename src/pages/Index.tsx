@@ -34,10 +34,11 @@ const ResortStep = ({ onComplete }: { onComplete: (resort: string) => void }) =>
         placeholder="Search resorts..."
         className="w-full bg-white/10 border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder:text-white/30 outline-none focus:border-accent/50 transition-colors"
       />
-      <div className="max-h-40 overflow-y-auto space-y-1 scrollbar-none">
-        {filtered.slice(0, 6).map(resort => (
+      <div className="max-h-48 overflow-y-auto space-y-1 scrollbar-none">
+        {filtered.slice(0, 10).map(resort => (
           <button key={resort} onClick={() => { setSelected(resort); setSearch(resort); }}
-            className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-colors ${selected === resort ? 'bg-accent/20 text-accent' : 'text-white/70 hover:bg-white/5'}`}>
+            className={`w-full text-left px-3 py-2.5 rounded-lg text-sm transition-colors flex items-center gap-2 ${selected === resort ? 'bg-accent/20 text-accent' : 'text-white/70 hover:bg-white/5'}`}>
+            {selected === resort && <span className="text-accent">✓</span>}
             {resort}
           </button>
         ))}
