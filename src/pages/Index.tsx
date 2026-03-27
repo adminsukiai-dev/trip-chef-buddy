@@ -212,7 +212,7 @@ const SplashScreen = ({ onStart }: { onStart: (mode: string) => void }) => {
 
       {/* Progress dots */}
       {step !== 'welcome' && (
-        <div className="absolute bottom-8 flex gap-2">
+        <div className="absolute bottom-8 flex gap-2 z-10">
           {['resort', 'date', 'guests'].map((s, i) => (
             <div key={s} className={`w-1.5 h-1.5 rounded-full transition-colors ${
               ['resort', 'date', 'guests'].indexOf(step) >= i ? 'bg-accent' : 'bg-white/15'}`} />
