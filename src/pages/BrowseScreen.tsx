@@ -4,6 +4,7 @@ import { Search, ArrowLeft, Wine } from 'lucide-react';
 import { CATEGORIES, PRODUCTS, BEVERAGE_SUBCATEGORIES, Product } from '@/data/products';
 import ProductCard from '@/components/ProductCard';
 import AgeVerificationModal from '@/components/AgeVerificationModal';
+import { useUserDietaryProfile } from '@/hooks/useUserDietaryProfile';
 
 const FILTERS = ['All', 'Organic', 'Gluten-Free', 'Vegan', 'Kid-Friendly', 'Popular'];
 
