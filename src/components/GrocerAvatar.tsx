@@ -9,7 +9,7 @@ interface GrocerAvatarProps {
 const sizes = { sm: 'w-8 h-8', md: 'w-10 h-10', lg: 'w-14 h-14' };
 const iconSizes = { sm: 14, md: 16, lg: 22 };
 
-const GrocerAvatar = ({ size = 'md', speaking = false }: GroCerAvatarProps) => (
+const GrocerAvatar = ({ size = 'md', speaking = false }: GrocerAvatarProps) => (
   <motion.div
     className={`${sizes[size]} rounded-full bg-primary flex items-center justify-center flex-shrink-0`}
     animate={speaking ? { scale: [1, 1.05, 1] } : {}}

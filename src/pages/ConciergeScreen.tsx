@@ -143,7 +143,7 @@ const ConciergeScreen = ({ onViewCart }: ConciergeScreenProps) => {
         <div className="flex-1">
           <h2 className="text-sm font-semibold font-display">Grocer</h2>
           <div className="flex items-center gap-1.5">
-            <span className="w-2 h-2 rounded-full bg-green-500" />
+            <span className="w-2 h-2 rounded-full bg-primary" />
             <span className="text-xs text-muted-foreground">Online · Your personal shopper</span>
           </div>
         </div>
