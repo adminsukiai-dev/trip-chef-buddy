@@ -6,6 +6,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { ORLANDO_RESORTS } from '@/data/products';
 import AuthPage from '@/pages/AuthPage';
 import ProfileEditor from '@/components/ProfileEditor';
+import ProfileFamilyScreen from '@/components/ProfileFamilyScreen';
 import { toast } from 'sonner';
 import { motion, AnimatePresence } from 'framer-motion';
 
