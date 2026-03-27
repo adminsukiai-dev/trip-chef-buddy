@@ -239,12 +239,17 @@ const AccountScreen = () => {
               if (item.label === 'Profile & Family' && user) setShowProfileFamily(true);
               if (item.label === 'Favorites' && user) setShowFavorites(true);
             }}
-            className="w-full grocer-input-card flex items-center gap-3">
+            className="w-full grocer-input-card flex items-center gap-3 relative">
             <item.icon size={20} className="text-primary" />
             <div className="flex-1 text-left">
               <p className="text-sm font-medium">{item.label}</p>
               <p className="text-xs text-muted-foreground">{item.desc}</p>
             </div>
+            {item.label === 'Favorites' && favoriteIds.size > 0 && (
+              <Badge variant="default" className="text-[10px] px-1.5 py-0 min-w-[20px] justify-center">
+                {favoriteIds.size}
+              </Badge>
+            )}
             <ChevronRight size={16} className="text-muted-foreground" />
           </button>
         ))}
