@@ -184,6 +184,10 @@ const AccountScreen = () => {
     return <AuthPage />;
   }
 
+  if (user && showProfileFamily) {
+    return <ProfileFamilyScreen onBack={() => setShowProfileFamily(false)} />;
+  }
+
   const handleSignOut = async () => {
     await signOut();
     toast.success('Signed out successfully');
