@@ -47,6 +47,7 @@ const BrowseScreen = () => {
   };
 
   const filteredProducts = PRODUCTS.filter(p => {
+    if (activeFilter === 'Favorites') return isFavorite(p.id);
     if (selectedCategory && p.category !== selectedCategory) return false;
     if (selectedCategory === 'beverages' && selectedBevSub && p.subcategory !== selectedBevSub) return false;
     if (search && !p.name.toLowerCase().includes(search.toLowerCase()) && !p.brand.toLowerCase().includes(search.toLowerCase())) return false;
