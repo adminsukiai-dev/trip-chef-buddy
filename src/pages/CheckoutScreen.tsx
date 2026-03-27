@@ -1,11 +1,15 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowLeft, Clock, CreditCard, MapPin, Check, Gift, Wine } from 'lucide-react';
+import { ArrowLeft, Clock, CreditCard, MapPin, Check, Gift, Wine, Bell } from 'lucide-react';
 import { useCartStore } from '@/store/cartStore';
 import { useAuth } from '@/hooks/useAuth';
+import { useTripProfile } from '@/hooks/useTripProfile';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import confetti from 'canvas-confetti';
+import AlcoholIdVerification from '@/components/AlcoholIdVerification';
+import BellServicesCard from '@/components/BellServicesCard';
+import { isDisneyResort } from '@/data/products';
 
 type CheckoutStep = 'delivery' | 'payment' | 'confirmed';
 
@@ -19,7 +23,7 @@ const TIME_SLOTS = [
 
 interface CheckoutScreenProps {
   onBack: () => void;
-  onComplete: () => void;
+  onComplete: (orderId?: string) => void;
 }
 
 const CheckoutScreen = ({ onBack, onComplete }: CheckoutScreenProps) => {
@@ -32,6 +36,16 @@ const CheckoutScreen = ({ onBack, onComplete }: CheckoutScreenProps) => {
   const [cardCvc, setCardCvc] = useState('');
   const [cardName, setCardName] = useState('');
   const [processing, setProcessing] = useState(false);
+  const [idMethod, setIdMethod] = useState<'upload' | 'at-delivery' | null>(null);
+  const [bellAcknowledged, setBellAcknowledged] = useState(false);
+  const [completedOrderId, setCompletedOrderId] = useState<string | null>(null);
+
+  const { user } = useAuth();
+  const { savedTrip } = useTripProfile();
+
+  const hasAlcohol = items.some(item => item.product.isAlcohol);
+  const isDisney = savedTrip?.resort ? isDisneyResort(savedTrip.resort) : false;
+  const resortName = savedTrip?.resort || '';
 
   const deliveryFee = totalPrice() >= 200 ? 0 : 14.99;
   const freeWine = totalPrice() >= 200;
@@ -48,14 +62,15 @@ const CheckoutScreen = ({ onBack, onComplete }: CheckoutScreenProps) => {
     return digits;
   };
 
-  const { user } = useAuth();
+  const canProceedToPayment = selectedSlot && (!isDisney || bellAcknowledged);
 
   const handlePlaceOrder = async () => {
     setProcessing(true);
 
     try {
+      let orderId: string | undefined;
+
       if (user) {
-        // Save order to database
         const { data: order, error: orderError } = await supabase
           .from('orders')
           .insert({
@@ -66,14 +81,14 @@ const CheckoutScreen = ({ onBack, onComplete }: CheckoutScreenProps) => {
             subtotal: totalPrice(),
             delivery_fee: deliveryFee,
             total,
-            resort: null,
+            resort: resortName || null,
           })
           .select('id')
           .single();
 
         if (orderError) throw orderError;
+        orderId = order.id;
 
-        // Save order items
         const orderItems = items.map(item => ({
           order_id: order.id,
           product_id: item.product.id,
@@ -89,6 +104,7 @@ const CheckoutScreen = ({ onBack, onComplete }: CheckoutScreenProps) => {
         if (itemsError) throw itemsError;
       }
 
+      setCompletedOrderId(orderId || null);
       setStep('confirmed');
       clearCart();
     } catch (err: any) {
@@ -104,22 +120,9 @@ const CheckoutScreen = ({ onBack, onComplete }: CheckoutScreenProps) => {
     if (step !== 'confirmed') return;
     const duration = 2500;
     const end = Date.now() + duration;
-
     const frame = () => {
-      confetti({
-        particleCount: 3,
-        angle: 60,
-        spread: 55,
-        origin: { x: 0, y: 0.7 },
-        colors: ['#2E8B3D', '#D4A843', '#FFE0A0', '#4CAF50'],
-      });
-      confetti({
-        particleCount: 3,
-        angle: 120,
-        spread: 55,
-        origin: { x: 1, y: 0.7 },
-        colors: ['#2E8B3D', '#D4A843', '#FFE0A0', '#4CAF50'],
-      });
+      confetti({ particleCount: 3, angle: 60, spread: 55, origin: { x: 0, y: 0.7 }, colors: ['#2E8B3D', '#D4A843', '#FFE0A0', '#4CAF50'] });
+      confetti({ particleCount: 3, angle: 120, spread: 55, origin: { x: 1, y: 0.7 }, colors: ['#2E8B3D', '#D4A843', '#FFE0A0', '#4CAF50'] });
       if (Date.now() < end) requestAnimationFrame(frame);
     };
     frame();
@@ -141,7 +144,10 @@ const CheckoutScreen = ({ onBack, onComplete }: CheckoutScreenProps) => {
             className="text-2xl font-display font-bold text-white mb-2">Order Confirmed!</motion.h1>
           <motion.p initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.45 }}
             className="text-white/50 text-sm mb-8 max-w-xs">
-            Your groceries will be delivered to bell services before you arrive. We'll text you when it's ready.
+            {isDisney
+              ? `Your groceries will be delivered to Bell Services at ${resortName}. We'll text you when it's ready.`
+              : "Your groceries will be delivered to your location. We'll text you when it's ready."
+            }
           </motion.p>
 
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.6 }}
@@ -152,8 +158,8 @@ const CheckoutScreen = ({ onBack, onComplete }: CheckoutScreenProps) => {
                 <span className="text-sm text-white/70">Delivery: {TIME_SLOTS.find(s => s.id === selectedSlot)?.time || 'Morning'}</span>
               </div>
               <div className="flex items-center gap-3">
-                <MapPin size={16} className="text-accent" />
-                <span className="text-sm text-white/70">Bell services at your resort</span>
+                {isDisney ? <Bell size={16} className="text-accent" /> : <MapPin size={16} className="text-accent" />}
+                <span className="text-sm text-white/70">{isDisney ? `Bell Services at ${resortName}` : resortName || 'Your location'}</span>
               </div>
               {freeWine && (
                 <div className="flex items-center gap-3">
@@ -169,12 +175,22 @@ const CheckoutScreen = ({ onBack, onComplete }: CheckoutScreenProps) => {
             </div>
           </motion.div>
 
-          <motion.button initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.9 }}
-            whileTap={{ scale: 0.97 }} onClick={onComplete}
-            className="mt-8 py-3 px-8 rounded-full font-semibold text-sm"
-            style={{ background: 'linear-gradient(135deg, hsl(42 55% 55%), hsl(42 45% 45%))', color: 'white' }}>
-            Back to Grocer
-          </motion.button>
+          <div className="flex gap-3 mt-8">
+            {completedOrderId && (
+              <motion.button initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.8 }}
+                whileTap={{ scale: 0.97 }} onClick={() => onComplete(completedOrderId)}
+                className="py-3 px-6 rounded-full font-semibold text-sm border"
+                style={{ borderColor: 'rgba(255,255,255,0.2)', color: 'white' }}>
+                Track Order
+              </motion.button>
+            )}
+            <motion.button initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.9 }}
+              whileTap={{ scale: 0.97 }} onClick={() => onComplete()}
+              className="py-3 px-8 rounded-full font-semibold text-sm"
+              style={{ background: 'linear-gradient(135deg, hsl(42 55% 55%), hsl(42 45% 45%))', color: 'white' }}>
+              Back to Grocer
+            </motion.button>
+          </div>
         </div>
       </div>
     );
@@ -219,6 +235,12 @@ const CheckoutScreen = ({ onBack, onComplete }: CheckoutScreenProps) => {
           {step === 'delivery' && (
             <motion.div key="delivery" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}
               className="space-y-4">
+              
+              {/* Disney Bell Services */}
+              {isDisney && (
+                <BellServicesCard resortName={resortName} onAcknowledge={setBellAcknowledged} />
+              )}
+
               <div>
                 <h2 className="text-sm font-semibold mb-3 flex items-center gap-2">
                   <Clock size={16} className="text-accent" /> Choose a delivery window
@@ -228,9 +250,7 @@ const CheckoutScreen = ({ onBack, onComplete }: CheckoutScreenProps) => {
                     <motion.button key={slot.id} whileTap={{ scale: 0.98 }}
                       onClick={() => setSelectedSlot(slot.id)}
                       className={`w-full p-3.5 rounded-xl border text-left transition-all flex items-center justify-between ${
-                        selectedSlot === slot.id
-                          ? 'border-accent bg-accent/5 shadow-sm'
-                          : 'border-border hover:border-accent/30'
+                        selectedSlot === slot.id ? 'border-accent bg-accent/5 shadow-sm' : 'border-border hover:border-accent/30'
                       }`}>
                       <div>
                         <p className="text-sm font-medium">{slot.label}</p>
@@ -261,6 +281,11 @@ const CheckoutScreen = ({ onBack, onComplete }: CheckoutScreenProps) => {
                 />
               </div>
 
+              {/* Alcohol ID Verification */}
+              {hasAlcohol && (
+                <AlcoholIdVerification onComplete={setIdMethod} />
+              )}
+
               {/* Order summary */}
               <div className="rounded-xl border border-border p-4 space-y-2 text-sm">
                 <div className="flex justify-between">
@@ -284,8 +309,8 @@ const CheckoutScreen = ({ onBack, onComplete }: CheckoutScreenProps) => {
               </div>
 
               <motion.button whileTap={{ scale: 0.97 }}
-                onClick={() => selectedSlot && setStep('payment')}
-                disabled={!selectedSlot}
+                onClick={() => canProceedToPayment && setStep('payment')}
+                disabled={!canProceedToPayment || (hasAlcohol && !idMethod)}
                 className="w-full py-3.5 rounded-full font-semibold text-sm disabled:opacity-30 transition-opacity"
                 style={{ background: 'linear-gradient(135deg, hsl(42 55% 55%), hsl(42 45% 45%))', color: 'white' }}>
                 Continue to Payment
