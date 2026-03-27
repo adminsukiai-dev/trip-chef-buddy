@@ -54,10 +54,12 @@ export type Database = {
           created_at: string
           delivery_fee: number
           delivery_slot: string | null
+          estimated_delivery: string | null
           id: string
           resort: string | null
           special_instructions: string | null
           status: string
+          status_updated_at: string | null
           subtotal: number
           total: number
           user_id: string
@@ -66,10 +68,12 @@ export type Database = {
           created_at?: string
           delivery_fee?: number
           delivery_slot?: string | null
+          estimated_delivery?: string | null
           id?: string
           resort?: string | null
           special_instructions?: string | null
           status?: string
+          status_updated_at?: string | null
           subtotal?: number
           total?: number
           user_id: string
@@ -78,10 +82,12 @@ export type Database = {
           created_at?: string
           delivery_fee?: number
           delivery_slot?: string | null
+          estimated_delivery?: string | null
           id?: string
           resort?: string | null
           special_instructions?: string | null
           status?: string
+          status_updated_at?: string | null
           subtotal?: number
           total?: number
           user_id?: string
