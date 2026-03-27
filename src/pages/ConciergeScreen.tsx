@@ -237,44 +237,66 @@ const ConciergeScreen = ({ onViewCart }: ConciergeScreenProps) => {
       </motion.div>
 
       {/* Messages */}
-      <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 py-3 space-y-4 z-10 scrollbar-none">
+      <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 py-3 z-10 scrollbar-none">
         <AnimatePresence initial={false}>
-          {messages.map((msg) => (
-            <motion.div
-              key={msg.id}
-              initial={{ opacity: 0, y: 16 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.4, ease: [0.25, 0.46, 0.45, 0.94] }}
-              className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
-            >
-              <div className={`max-w-[88%] space-y-3`}>
-                {msg.role === 'assistant' ? (
-                  <div className="rounded-2xl rounded-tl-md px-4 py-3 bg-white/95 dark:bg-card border-l-2 border-accent"
-                    style={{ boxShadow: '0 2px 12px -4px rgba(0,0,0,0.08)' }}>
-                    <div className="text-sm leading-relaxed text-foreground prose prose-sm prose-headings:font-display prose-strong:text-primary">
-                      <ReactMarkdown>{msg.content}</ReactMarkdown>
+          {messages.map((msg, idx) => {
+            const prevMsg = messages[idx - 1];
+            const sameSender = prevMsg && prevMsg.role === msg.role;
+            return (
+              <motion.div
+                key={msg.id}
+                initial={{ opacity: 0, y: 14, x: msg.role === 'user' ? 12 : -12 }}
+                animate={{ opacity: 1, y: 0, x: 0 }}
+                transition={{ duration: 0.4, ease: [0.25, 0.46, 0.45, 0.94] }}
+                className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
+                style={{ marginTop: idx === 0 ? 0 : sameSender ? 12 : 20 }}
+              >
+                <div className="max-w-[85%] space-y-3">
+                  {msg.role === 'assistant' ? (
+                    <div
+                      className="px-4 py-3.5"
+                      style={{
+                        borderRadius: 20,
+                        borderTopLeftRadius: 6,
+                        background: '#FEFDFB',
+                        borderLeft: '2px solid #D4A843',
+                        boxShadow: '0 2px 10px -3px rgba(0,0,0,0.06)',
+                      }}
+                    >
+                      <div className="leading-relaxed prose prose-sm prose-headings:font-display prose-strong:font-semibold"
+                        style={{ fontSize: 15, color: '#2A2A2A' }}>
+                        <ReactMarkdown>{msg.content}</ReactMarkdown>
+                      </div>
                     </div>
-                  </div>
-                ) : (
-                  <div className="rounded-2xl rounded-tr-md px-4 py-3"
-                    style={{ background: 'hsl(130 54% 23%)', color: 'white' }}>
-                    <p className="text-sm leading-relaxed">{msg.content}</p>
-                  </div>
-                )}
-                {msg.products && msg.products.length > 0 && (
-                  <div className="flex gap-3 overflow-x-auto pb-1 -mx-1 px-1 scrollbar-none">
-                    {msg.products.map(product => (
-                      <ProductCard key={product.id} product={product} />
-                    ))}
-                  </div>
-                )}
-              </div>
-            </motion.div>
-          ))}
+                  ) : (
+                    <div
+                      className="px-4 py-3.5"
+                      style={{
+                        borderRadius: 20,
+                        borderTopRightRadius: 6,
+                        background: '#1B5E20',
+                        color: 'white',
+                        boxShadow: '0 2px 10px -3px rgba(0,0,0,0.1)',
+                      }}
+                    >
+                      <p style={{ fontSize: 15 }} className="leading-relaxed">{msg.content}</p>
+                    </div>
+                  )}
+                  {msg.products && msg.products.length > 0 && (
+                    <div className="flex gap-3 overflow-x-auto pb-1 -mx-1 px-1 scrollbar-none">
+                      {msg.products.map(product => (
+                        <ProductCard key={product.id} product={product} />
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </motion.div>
+            );
+          })}
         </AnimatePresence>
 
         {isTyping && (
-          <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}>
+          <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} style={{ marginTop: 20 }}>
             <TypingIndicator />
           </motion.div>
         )}
@@ -287,37 +309,42 @@ const ConciergeScreen = ({ onViewCart }: ConciergeScreenProps) => {
 
       {/* Quick action chips */}
       {messages.length <= 2 && (
-        <div className="flex gap-2 px-4 pb-2 overflow-x-auto scrollbar-none z-10">
-          {QUICK_ACTIONS.map((action) => (
-            <motion.button
-              key={action}
-              whileTap={{ scale: 0.95 }}
-              onClick={() => sendMessage(action)}
-              className="flex-shrink-0 px-3.5 py-1.5 rounded-full text-xs font-medium border transition-colors"
-              style={{
-                background: 'rgba(255,255,255,0.08)',
-                borderColor: 'rgba(255,255,255,0.15)',
-                color: 'hsl(var(--foreground))',
-              }}
-            >
-              {action}
-            </motion.button>
-          ))}
+        <div className="relative z-10 px-4 pb-2">
+          <div className="flex gap-2 overflow-x-auto scrollbar-none"
+            style={{ maskImage: 'linear-gradient(to right, black 90%, transparent)', WebkitMaskImage: 'linear-gradient(to right, black 90%, transparent)' }}>
+            {QUICK_ACTIONS.map((action) => (
+              <motion.button
+                key={action}
+                whileTap={{ scale: 0.93 }}
+                onClick={() => sendMessage(action)}
+                className="flex-shrink-0 rounded-full font-medium transition-all active:bg-primary active:text-white"
+                style={{
+                  padding: '6px 14px',
+                  fontSize: 13,
+                  background: 'transparent',
+                  border: '1.5px solid hsl(130 54% 23%)',
+                  color: 'hsl(var(--foreground))',
+                }}
+              >
+                {action}
+              </motion.button>
+            ))}
+          </div>
         </div>
       )}
 
       {/* Input bar */}
       <form onSubmit={handleSubmit}
-        className="flex items-center gap-2 px-4 py-3 z-10"
+        className="flex items-center gap-2.5 px-4 py-3 z-10"
         style={{
-          background: 'rgba(255,255,255,0.65)',
+          background: 'rgba(255,255,255,0.7)',
           backdropFilter: 'blur(24px) saturate(1.4)',
           WebkitBackdropFilter: 'blur(24px) saturate(1.4)',
-          borderTop: '1px solid rgba(255,255,255,0.3)',
+          borderTop: '1px solid rgba(255,255,255,0.35)',
         }}>
-        <motion.button type="button" whileTap={{ scale: 0.9 }} onClick={toggleVoice}
+        <motion.button type="button" whileTap={{ scale: 0.88 }} onClick={toggleVoice}
           className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0"
-          style={{ background: 'hsl(130 54% 23%)' }}>
+          style={{ background: '#1B5E20' }}>
           <Mic size={16} className="text-white" />
         </motion.button>
         <input
@@ -326,11 +353,20 @@ const ConciergeScreen = ({ onViewCart }: ConciergeScreenProps) => {
           value={input}
           onChange={e => setInput(e.target.value)}
           placeholder="Tell Grocer what you need..."
-          className="flex-1 bg-black/5 rounded-full px-4 py-2.5 text-sm outline-none placeholder:text-muted-foreground/50 placeholder:italic focus:bg-black/8 transition-colors"
+          className="flex-1 outline-none placeholder:italic transition-all"
+          style={{
+            background: 'rgba(0,0,0,0.04)',
+            borderRadius: 50,
+            padding: '10px 18px',
+            fontSize: 14,
+            color: '#2A2A2A',
+          }}
+          onFocus={e => { e.target.style.boxShadow = '0 0 0 2px rgba(212,168,67,0.2) inset'; e.target.style.background = 'rgba(0,0,0,0.06)'; }}
+          onBlur={e => { e.target.style.boxShadow = 'none'; e.target.style.background = 'rgba(0,0,0,0.04)'; }}
         />
-        <motion.button type="submit" whileTap={{ scale: 0.9 }} disabled={!input.trim()}
-          className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 disabled:opacity-30 transition-opacity"
-          style={{ background: 'hsl(42 50% 55%)' }}>
+        <motion.button type="submit" whileTap={{ scale: 0.88 }} disabled={!input.trim()}
+          className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 disabled:opacity-25 transition-opacity"
+          style={{ background: '#D4A843' }}>
           <ArrowRight size={16} className="text-white" />
         </motion.button>
       </form>
