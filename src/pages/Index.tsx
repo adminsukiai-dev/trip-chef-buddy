@@ -17,7 +17,7 @@ const ResortStep = ({ onComplete }: { onComplete: (resort: string) => void }) =>
 
   return (
     <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }}
-      className="w-full max-w-sm px-6 space-y-4">
+      className="w-full max-w-sm px-6 space-y-4 relative z-10">
       <div className="flex items-center gap-3 mb-2">
         <div className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center">
           <MapPin size={20} className="text-accent" />
