@@ -1,9 +1,11 @@
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { User, Heart, Shield, Gift, ChevronRight, LogOut, MapPin, Users, Pencil, Check, X } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useTripProfile } from '@/hooks/useTripProfile';
+import { supabase } from '@/integrations/supabase/client';
 import { ORLANDO_RESORTS } from '@/data/products';
 import AuthPage from '@/pages/AuthPage';
+import ProfileEditor from '@/components/ProfileEditor';
 import { toast } from 'sonner';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -81,7 +83,6 @@ const TripEditor = () => {
           </motion.div>
         ) : (
           <motion.div key="edit" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="space-y-3">
-            {/* Resort search */}
             <div>
               <label className="text-xs text-muted-foreground mb-1 block">Resort</label>
               <input
@@ -109,7 +110,6 @@ const TripEditor = () => {
               )}
             </div>
 
-            {/* Guest counters */}
             <div className="flex gap-4">
               <div className="flex-1">
                 <label className="text-xs text-muted-foreground mb-1 block">Adults</label>
@@ -133,7 +133,6 @@ const TripEditor = () => {
               </div>
             </div>
 
-            {/* Save / Cancel */}
             <div className="flex gap-2 pt-1">
               <button onClick={handleSave}
                 className="flex-1 py-2 rounded-lg bg-accent text-white text-sm font-semibold flex items-center justify-center gap-1">
@@ -155,6 +154,21 @@ const TripEditor = () => {
 const AccountScreen = () => {
   const { user, loading, signOut } = useAuth();
   const [showAuth, setShowAuth] = useState(false);
+  const [profile, setProfile] = useState<{ display_name: string | null; avatar_url: string | null }>({ display_name: null, avatar_url: null });
+
+  const fetchProfile = useCallback(async () => {
+    if (!user) return;
+    const { data } = await supabase
+      .from('profiles')
+      .select('display_name, avatar_url')
+      .eq('id', user.id)
+      .single();
+    if (data) setProfile(data);
+  }, [user]);
+
+  useEffect(() => {
+    fetchProfile();
+  }, [fetchProfile]);
 
   if (loading) {
     return (
@@ -173,34 +187,33 @@ const AccountScreen = () => {
     toast.success('Signed out successfully');
   };
 
+  const displayName = profile.display_name || user?.user_metadata?.display_name || user?.email || 'Guest User';
+
   return (
     <div className="flex flex-col h-full overflow-y-auto px-4 pt-4 pb-20">
       <h1 className="text-2xl font-display font-bold mb-6">Account</h1>
 
-      <div className="grocer-input-card flex items-center gap-4 mb-4">
-        <div className="w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center">
-          <User size={24} className="text-primary" />
-        </div>
-        <div className="flex-1">
-          {user ? (
-            <>
-              <p className="font-semibold">{user.user_metadata?.display_name || user.email}</p>
-              <p className="text-sm text-muted-foreground">{user.email}</p>
-            </>
-          ) : (
-            <>
-              <p className="font-semibold">Guest User</p>
-              <p className="text-sm text-muted-foreground">Sign in for a personalized experience</p>
-            </>
-          )}
-        </div>
-        {!user && (
+      {user ? (
+        <ProfileEditor
+          displayName={displayName}
+          avatarUrl={profile.avatar_url}
+          onUpdate={fetchProfile}
+        />
+      ) : (
+        <div className="grocer-input-card flex items-center gap-4 mb-4">
+          <div className="w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center">
+            <User size={24} className="text-primary" />
+          </div>
+          <div className="flex-1">
+            <p className="font-semibold">Guest User</p>
+            <p className="text-sm text-muted-foreground">Sign in for a personalized experience</p>
+          </div>
           <button onClick={() => setShowAuth(true)}
             className="px-4 py-2 rounded-xl bg-accent text-white text-sm font-semibold">
             Sign In
           </button>
-        )}
-      </div>
+        </div>
+      )}
 
       {user && <TripEditor />}
 
