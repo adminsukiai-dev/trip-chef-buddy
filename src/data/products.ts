@@ -7,6 +7,7 @@ export interface Product {
   category: string;
   subcategory: string;
   dietary: string[];
+  allergens?: string[];
   popular: boolean;
   description?: string;
   isAlcohol?: boolean;
