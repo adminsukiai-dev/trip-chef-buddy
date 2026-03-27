@@ -16,6 +16,8 @@ const BrowseScreen = () => {
   const [ageVerified, setAgeVerified] = useState(false);
   const [showAgeModal, setShowAgeModal] = useState(false);
   const [pendingCategory, setPendingCategory] = useState<string | null>(null);
+  const { allergens, familyAllergens, dietaryPreferences } = useUserDietaryProfile();
+  const allAllergens = [...new Set([...allergens, ...familyAllergens])];
 
   const handleCategoryClick = (catId: string) => {
     const cat = CATEGORIES.find(c => c.id === catId);
