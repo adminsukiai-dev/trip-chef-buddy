@@ -10,6 +10,23 @@ import OrdersScreen from '@/pages/OrdersScreen';
 import AccountScreen from '@/pages/AccountScreen';
 import { ORLANDO_RESORTS } from '@/data/products';
 
+/* ─── Typewriter Effect ─── */
+const Typewriter = ({ text, delay = 0 }: { text: string; delay?: number }) => {
+  const [displayed, setDisplayed] = useState('');
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+      let i = 0;
+      const interval = setInterval(() => {
+        setDisplayed(text.slice(0, ++i));
+        if (i >= text.length) clearInterval(interval);
+      }, 45);
+      return () => clearInterval(interval);
+    }, delay * 1000);
+    return () => clearTimeout(timeout);
+  }, [text, delay]);
+  return <>{displayed}<span className="animate-pulse">|</span></>;
+};
+
 /* ─── Trip Setup Step Components ─── */
 const ResortStep = ({ onComplete }: { onComplete: (resort: string) => void }) => {
   const [search, setSearch] = useState('');
