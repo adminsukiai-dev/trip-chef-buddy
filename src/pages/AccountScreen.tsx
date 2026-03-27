@@ -225,7 +225,11 @@ const AccountScreen = () => {
 
       <div className="space-y-2">
         {menuItems.map(item => (
-          <button key={item.label} className="w-full grocer-input-card flex items-center gap-3">
+          <button key={item.label}
+            onClick={() => {
+              if (item.label === 'Profile & Family' && user) setShowProfileFamily(true);
+            }}
+            className="w-full grocer-input-card flex items-center gap-3">
             <item.icon size={20} className="text-primary" />
             <div className="flex-1 text-left">
               <p className="text-sm font-medium">{item.label}</p>
