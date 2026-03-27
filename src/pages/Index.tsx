@@ -205,8 +205,15 @@ const SplashScreen = ({ onStart }: { onStart: (mode: string) => void }) => {
             <motion.div initial={{ y: 30, opacity: 0 }} animate={{ y: 0, opacity: 1 }}
               transition={{ delay: 0.5, duration: 0.6 }} className="mt-4 w-full max-w-sm px-8 space-y-3.5">
               <motion.button whileTap={{ scale: 0.96 }} whileHover={{ scale: 1.02 }} onClick={() => setStep('resort')}
-                className="w-full py-5 rounded-2xl flex items-center justify-center gap-3 font-semibold text-[15px] shadow-lg"
+                className="w-full py-5 rounded-2xl flex items-center justify-center gap-3 font-semibold text-[15px] shadow-lg relative overflow-hidden"
                 style={{ background: 'linear-gradient(135deg, rgba(255,255,255,0.95), rgba(255,255,255,0.85))', color: '#0D2818' }}>
+                {/* Shimmer sweep */}
+                <motion.div
+                  className="absolute inset-0 pointer-events-none"
+                  style={{ background: 'linear-gradient(105deg, transparent 40%, rgba(212,168,67,0.25) 50%, transparent 60%)' }}
+                  animate={{ x: ['-100%', '200%'] }}
+                  transition={{ duration: 2.5, repeat: Infinity, repeatDelay: 1.5, ease: 'easeInOut' }}
+                />
                 <Leaf size={20} />
                 Talk to Grocer
                 <span className="text-[10px] px-2.5 py-1 rounded-full font-semibold" style={{ background: 'rgba(212,168,67,0.12)', color: 'hsl(42 55% 50%)' }}>Recommended</span>
