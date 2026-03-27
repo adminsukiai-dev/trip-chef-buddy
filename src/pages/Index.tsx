@@ -288,7 +288,7 @@ const Index = () => {
   return (
     <div className="h-screen flex flex-col bg-background overflow-hidden">
       <AnimatePresence>
-        {showSplash && <SplashScreen onStart={handleStart} />}
+        {showSplash && <SplashScreen onStart={handleStart} onSaveTrip={handleSaveTrip} />}
       </AnimatePresence>
 
       <div className="flex-1 overflow-hidden">
