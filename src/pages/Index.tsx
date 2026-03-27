@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Leaf, Users, CalendarDays, MapPin, ChevronRight } from 'lucide-react';
 import BottomNav from '@/components/BottomNav';
