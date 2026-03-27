@@ -242,7 +242,8 @@ const Index = () => {
       <div className="flex-1 overflow-hidden">
         {activeTab === 'grocer' && <ConciergeScreen onViewCart={() => setActiveTab('cart')} />}
         {activeTab === 'browse' && <BrowseScreen />}
-        {activeTab === 'cart' && <CartScreen onTalkToGrocer={() => setActiveTab('grocer')} />}
+        {activeTab === 'cart' && <CartScreen onTalkToGrocer={() => setActiveTab('grocer')} onCheckout={() => setActiveTab('checkout')} />}
+        {activeTab === 'checkout' && <CheckoutScreen onBack={() => setActiveTab('cart')} onComplete={() => setActiveTab('grocer')} />}
         {activeTab === 'orders' && <OrdersScreen />}
         {activeTab === 'account' && <AccountScreen />}
       </div>
