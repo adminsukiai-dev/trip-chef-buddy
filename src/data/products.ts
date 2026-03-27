@@ -50,11 +50,19 @@ export const PRODUCTS: Product[] = [
 ];
 
 export const ORLANDO_RESORTS = [
+  // Disney Resorts
   "Animal Kingdom Lodge", "Art of Animation Resort", "Bay Lake Tower", "Beach Club Resort",
   "BoardWalk Inn", "Caribbean Beach Resort", "Contemporary Resort", "Coronado Springs Resort",
-  "Grand Floridian Resort", "Old Key West Resort", "Polynesian Village Resort", "Pop Century Resort",
-  "Port Orleans - French Quarter", "Port Orleans - Riverside", "Riviera Resort", "Saratoga Springs Resort",
+  "Fort Wilderness Resort", "Grand Floridian Resort", "Old Key West Resort",
+  "Polynesian Village Resort", "Pop Century Resort", "Port Orleans - French Quarter",
+  "Port Orleans - Riverside", "Riviera Resort", "Saratoga Springs Resort",
   "Wilderness Lodge", "Yacht Club Resort", "All-Star Movies Resort", "All-Star Music Resort",
-  "All-Star Sports Resort", "Bonnet Creek Resort", "Hilton Orlando", "Marriott World Center",
-  "Vacation Rental / Airbnb", "Other Hotel / Resort"
+  "All-Star Sports Resort",
+  // Universal Resorts
+  "Cabana Bay Beach Resort", "Aventura Hotel", "Royal Pacific Resort",
+  "Hard Rock Hotel Orlando", "Portofino Bay Hotel", "Sapphire Falls Resort",
+  "Endless Summer Resort - Surfside", "Endless Summer Resort - Dockside",
+  // Other
+  "Bonnet Creek Resort", "Hilton Orlando", "Marriott World Center",
+  "Vacation Rental / Airbnb", "Other address"
 ];

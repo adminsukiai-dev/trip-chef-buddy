@@ -150,8 +150,8 @@ const SplashScreen = ({ onStart }: { onStart: (mode: string) => void }) => {
       className="fixed inset-0 z-50 flex flex-col items-center justify-center overflow-hidden"
       style={{ background: 'linear-gradient(160deg, #060E08 0%, #0D2818 40%, #143820 100%)' }}>
       
-      {/* Subtle particles bg */}
-      <div className="absolute inset-0 overflow-hidden">
+      {/* Subtle particles bg — pointer-events-none so it doesn't block clicks */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
         {[...Array(20)].map((_, i) => (
           <motion.div key={i}
             className="absolute w-1 h-1 rounded-full bg-accent/20"
