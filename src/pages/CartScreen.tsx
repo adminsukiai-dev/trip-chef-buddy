@@ -4,9 +4,10 @@ import { useCartStore } from '@/store/cartStore';
 
 interface CartScreenProps {
   onTalkToGrocer: () => void;
+  onCheckout: () => void;
 }
 
-const CartScreen = ({ onTalkToGrocer }: CartScreenProps) => {
+const CartScreen = ({ onTalkToGrocer, onCheckout }: CartScreenProps) => {
   const { items, removeItem, updateQuantity, totalPrice, totalItems } = useCartStore();
   const deliveryFee = totalPrice() >= 200 ? 0 : 14.99;
   const freeDeliveryGap = Math.max(0, 200 - totalPrice());
@@ -68,13 +69,11 @@ const CartScreen = ({ onTalkToGrocer }: CartScreenProps) => {
               ))}
             </div>
 
-            {/* Ask Grocer */}
             <button onClick={onTalkToGrocer} className="w-full mt-4 grocer-input-card flex items-center justify-center gap-2 text-primary font-medium text-sm">
               <MessageCircle size={16} />
               "Anything I'm forgetting?" — Ask Grocer
             </button>
 
-            {/* Summary */}
             <div className="mt-6 space-y-2 text-sm">
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Subtotal</span>
@@ -94,7 +93,9 @@ const CartScreen = ({ onTalkToGrocer }: CartScreenProps) => {
 
             <motion.button
               whileTap={{ scale: 0.97 }}
-              className="w-full mt-4 py-3.5 rounded-full bg-primary text-primary-foreground font-semibold text-base"
+              onClick={onCheckout}
+              className="w-full mt-4 py-3.5 rounded-full font-semibold text-base"
+              style={{ background: 'linear-gradient(135deg, hsl(42 55% 55%), hsl(42 45% 45%))', color: 'white' }}
             >
               Proceed to Checkout
             </motion.button>

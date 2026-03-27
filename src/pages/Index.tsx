@@ -5,6 +5,7 @@ import BottomNav from '@/components/BottomNav';
 import ConciergeScreen from '@/pages/ConciergeScreen';
 import BrowseScreen from '@/pages/BrowseScreen';
 import CartScreen from '@/pages/CartScreen';
+import CheckoutScreen from '@/pages/CheckoutScreen';
 import OrdersScreen from '@/pages/OrdersScreen';
 import AccountScreen from '@/pages/AccountScreen';
 import { ORLANDO_RESORTS } from '@/data/products';
@@ -241,7 +242,8 @@ const Index = () => {
       <div className="flex-1 overflow-hidden">
         {activeTab === 'grocer' && <ConciergeScreen onViewCart={() => setActiveTab('cart')} />}
         {activeTab === 'browse' && <BrowseScreen />}
-        {activeTab === 'cart' && <CartScreen onTalkToGrocer={() => setActiveTab('grocer')} />}
+        {activeTab === 'cart' && <CartScreen onTalkToGrocer={() => setActiveTab('grocer')} onCheckout={() => setActiveTab('checkout')} />}
+        {activeTab === 'checkout' && <CheckoutScreen onBack={() => setActiveTab('cart')} onComplete={() => setActiveTab('grocer')} />}
         {activeTab === 'orders' && <OrdersScreen />}
         {activeTab === 'account' && <AccountScreen />}
       </div>
