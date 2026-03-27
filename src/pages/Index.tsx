@@ -8,6 +8,7 @@ import CartScreen from '@/pages/CartScreen';
 import CheckoutScreen from '@/pages/CheckoutScreen';
 import OrdersScreen from '@/pages/OrdersScreen';
 import AccountScreen from '@/pages/AccountScreen';
+import DeliveryTracker from '@/components/DeliveryTracker';
 import { ORLANDO_RESORTS } from '@/data/products';
 import { useAuth } from '@/hooks/useAuth';
 import { useTripProfile, TripDetails } from '@/hooks/useTripProfile';
@@ -171,7 +172,6 @@ const SplashScreen = ({ onStart, onSaveTrip }: { onStart: (mode: string) => void
       className="fixed inset-0 z-50 flex flex-col items-center justify-center overflow-hidden"
       style={{ background: 'linear-gradient(160deg, #060E08 0%, #0D2818 40%, #143820 100%)' }}>
       
-      {/* Subtle particles bg — pointer-events-none so it doesn't block clicks */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         {[...Array(20)].map((_, i) => (
           <motion.div key={i}
@@ -211,7 +211,6 @@ const SplashScreen = ({ onStart, onSaveTrip }: { onStart: (mode: string) => void
                 transition={{ duration: 2.5, repeat: Infinity, ease: 'easeInOut' }}
                 className="w-full py-5 rounded-2xl flex items-center justify-center gap-3 font-semibold text-[15px] relative overflow-hidden"
                 style={{ background: 'linear-gradient(135deg, rgba(255,255,255,0.95), rgba(255,255,255,0.85))', color: '#0D2818' }}>
-                {/* Shimmer sweep */}
                 <motion.div
                   className="absolute inset-0 pointer-events-none"
                   style={{ background: 'linear-gradient(105deg, transparent 40%, rgba(212,168,67,0.25) 50%, transparent 60%)' }}
@@ -249,7 +248,6 @@ const SplashScreen = ({ onStart, onSaveTrip }: { onStart: (mode: string) => void
         )}
       </AnimatePresence>
 
-      {/* Progress dots */}
       {step !== 'welcome' && (
         <div className="absolute bottom-8 flex gap-2 z-10">
           {['resort', 'date', 'guests'].map((s, i) => (
@@ -267,6 +265,7 @@ const Index = () => {
   const { savedTrip, loading: tripLoading, saveTripDetails } = useTripProfile();
   const [showSplash, setShowSplash] = useState(true);
   const [activeTab, setActiveTab] = useState('grocer');
+  const [trackingOrderId, setTrackingOrderId] = useState<string | null>(null);
 
   // Skip onboarding for returning users with saved trip data
   useEffect(() => {
@@ -285,6 +284,17 @@ const Index = () => {
     saveTripDetails(trip);
   };
 
+  const handleCheckoutComplete = (orderId?: string) => {
+    if (orderId) {
+      setTrackingOrderId(orderId);
+      setActiveTab('tracking');
+    } else {
+      setActiveTab('grocer');
+    }
+  };
+
+  const showNav = !showSplash && activeTab !== 'checkout' && activeTab !== 'tracking';
+
   return (
     <div className="h-screen flex flex-col bg-background overflow-hidden">
       <AnimatePresence>
@@ -295,12 +305,19 @@ const Index = () => {
         {activeTab === 'grocer' && <ConciergeScreen onViewCart={() => setActiveTab('cart')} />}
         {activeTab === 'browse' && <BrowseScreen />}
         {activeTab === 'cart' && <CartScreen onTalkToGrocer={() => setActiveTab('grocer')} onCheckout={() => setActiveTab('checkout')} />}
-        {activeTab === 'checkout' && <CheckoutScreen onBack={() => setActiveTab('cart')} onComplete={() => setActiveTab('grocer')} />}
+        {activeTab === 'checkout' && <CheckoutScreen onBack={() => setActiveTab('cart')} onComplete={handleCheckoutComplete} />}
         {activeTab === 'orders' && <OrdersScreen />}
         {activeTab === 'account' && <AccountScreen />}
+        {activeTab === 'tracking' && trackingOrderId && (
+          <DeliveryTracker
+            orderId={trackingOrderId}
+            resortName={savedTrip?.resort || undefined}
+            onBack={() => { setTrackingOrderId(null); setActiveTab('orders'); }}
+          />
+        )}
       </div>
 
-      {!showSplash && <BottomNav active={activeTab} onNavigate={setActiveTab} />}
+      {showNav && <BottomNav active={activeTab} onNavigate={setActiveTab} />}
     </div>
   );
 };
