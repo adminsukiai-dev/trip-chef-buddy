@@ -5,6 +5,7 @@ import { CATEGORIES, PRODUCTS, BEVERAGE_SUBCATEGORIES, Product } from '@/data/pr
 import ProductCard from '@/components/ProductCard';
 import AgeVerificationModal from '@/components/AgeVerificationModal';
 import { useUserDietaryProfile } from '@/hooks/useUserDietaryProfile';
+import { useFavorites } from '@/hooks/useFavorites';
 
 const FILTERS = ['All', 'Organic', 'Gluten-Free', 'Vegan', 'Kid-Friendly', 'Popular'];
 
