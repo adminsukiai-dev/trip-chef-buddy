@@ -157,6 +157,7 @@ const TripEditor = () => {
 /* ─── Main Account Screen ─── */
 const AccountScreen = () => {
   const { user, loading, signOut } = useAuth();
+  const { favoriteIds } = useFavorites();
   const [showAuth, setShowAuth] = useState(false);
   const [showProfileFamily, setShowProfileFamily] = useState(false);
   const [showFavorites, setShowFavorites] = useState(false);
