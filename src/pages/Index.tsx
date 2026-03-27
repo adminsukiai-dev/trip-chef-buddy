@@ -179,8 +179,10 @@ const SplashScreen = ({ onStart }: { onStart: (mode: string) => void }) => {
             <div className="text-center">
               <motion.h1 initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}
                 className="text-4xl font-display font-bold text-white tracking-tight">Garden Grocer</motion.h1>
-              <motion.p initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.35 }}
-                className="text-white/40 text-sm mt-2 font-light tracking-wide">Your AI vacation kitchen concierge</motion.p>
+              <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.35 }}
+                className="text-white/40 text-sm mt-2 font-light tracking-wide">
+                <Typewriter text="Your AI vacation kitchen concierge" delay={0.6} />
+              </motion.p>
             </div>
 
             <motion.div initial={{ y: 30, opacity: 0 }} animate={{ y: 0, opacity: 1 }}
