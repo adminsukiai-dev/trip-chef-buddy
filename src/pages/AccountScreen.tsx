@@ -7,6 +7,7 @@ import { ORLANDO_RESORTS } from '@/data/products';
 import AuthPage from '@/pages/AuthPage';
 import ProfileEditor from '@/components/ProfileEditor';
 import ProfileFamilyScreen from '@/components/ProfileFamilyScreen';
+import FavoritesScreen from '@/components/FavoritesScreen';
 import { toast } from 'sonner';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -156,6 +157,7 @@ const AccountScreen = () => {
   const { user, loading, signOut } = useAuth();
   const [showAuth, setShowAuth] = useState(false);
   const [showProfileFamily, setShowProfileFamily] = useState(false);
+  const [showFavorites, setShowFavorites] = useState(false);
   const [profile, setProfile] = useState<{ display_name: string | null; avatar_url: string | null }>({ display_name: null, avatar_url: null });
 
   const fetchProfile = useCallback(async () => {
@@ -186,6 +188,10 @@ const AccountScreen = () => {
 
   if (user && showProfileFamily) {
     return <ProfileFamilyScreen onBack={() => setShowProfileFamily(false)} />;
+  }
+
+  if (user && showFavorites) {
+    return <FavoritesScreen onBack={() => setShowFavorites(false)} />;
   }
 
   const handleSignOut = async () => {
@@ -228,6 +234,7 @@ const AccountScreen = () => {
           <button key={item.label}
             onClick={() => {
               if (item.label === 'Profile & Family' && user) setShowProfileFamily(true);
+              if (item.label === 'Favorites' && user) setShowFavorites(true);
             }}
             className="w-full grocer-input-card flex items-center gap-3">
             <item.icon size={20} className="text-primary" />
