@@ -6,6 +6,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { ORLANDO_RESORTS } from '@/data/products';
 import AuthPage from '@/pages/AuthPage';
 import ProfileEditor from '@/components/ProfileEditor';
+import ProfileFamilyScreen from '@/components/ProfileFamilyScreen';
 import { toast } from 'sonner';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -154,6 +155,7 @@ const TripEditor = () => {
 const AccountScreen = () => {
   const { user, loading, signOut } = useAuth();
   const [showAuth, setShowAuth] = useState(false);
+  const [showProfileFamily, setShowProfileFamily] = useState(false);
   const [profile, setProfile] = useState<{ display_name: string | null; avatar_url: string | null }>({ display_name: null, avatar_url: null });
 
   const fetchProfile = useCallback(async () => {
@@ -180,6 +182,10 @@ const AccountScreen = () => {
 
   if (!user && showAuth) {
     return <AuthPage />;
+  }
+
+  if (user && showProfileFamily) {
+    return <ProfileFamilyScreen onBack={() => setShowProfileFamily(false)} />;
   }
 
   const handleSignOut = async () => {
@@ -219,7 +225,11 @@ const AccountScreen = () => {
 
       <div className="space-y-2">
         {menuItems.map(item => (
-          <button key={item.label} className="w-full grocer-input-card flex items-center gap-3">
+          <button key={item.label}
+            onClick={() => {
+              if (item.label === 'Profile & Family' && user) setShowProfileFamily(true);
+            }}
+            className="w-full grocer-input-card flex items-center gap-3">
             <item.icon size={20} className="text-primary" />
             <div className="flex-1 text-left">
               <p className="text-sm font-medium">{item.label}</p>
