@@ -241,7 +241,9 @@ const SplashScreen = ({ onStart, onSaveTrip }: { onStart: (mode: string) => void
 
         {step === 'guests' && (
           <GuestsStep key="guests" onComplete={({ adults, kids }) => {
-            setTripInfo(prev => ({ ...prev, adults, kids }));
+            const finalTrip = { ...tripInfo, adults, kids };
+            setTripInfo(finalTrip);
+            onSaveTrip?.(finalTrip);
             onStart('grocer');
           }} />
         )}
