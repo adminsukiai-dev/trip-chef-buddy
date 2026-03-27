@@ -19,6 +19,7 @@ const BrowseScreen = () => {
   const [pendingCategory, setPendingCategory] = useState<string | null>(null);
   const { allergens, familyAllergens, dietaryPreferences } = useUserDietaryProfile();
   const allAllergens = [...new Set([...allergens, ...familyAllergens])];
+  const { toggleFavorite, isFavorite } = useFavorites();
 
   const handleCategoryClick = (catId: string) => {
     const cat = CATEGORIES.find(c => c.id === catId);
