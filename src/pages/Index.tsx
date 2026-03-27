@@ -263,12 +263,26 @@ const SplashScreen = ({ onStart, onSaveTrip }: { onStart: (mode: string) => void
 };
 
 const Index = () => {
+  const { user, loading: authLoading } = useAuth();
+  const { savedTrip, loading: tripLoading, saveTripDetails } = useTripProfile();
   const [showSplash, setShowSplash] = useState(true);
   const [activeTab, setActiveTab] = useState('grocer');
+
+  // Skip onboarding for returning users with saved trip data
+  useEffect(() => {
+    if (authLoading || tripLoading) return;
+    if (user && savedTrip?.resort) {
+      setShowSplash(false);
+    }
+  }, [user, savedTrip, authLoading, tripLoading]);
 
   const handleStart = (mode: string) => {
     setActiveTab(mode);
     setShowSplash(false);
+  };
+
+  const handleSaveTrip = (trip: TripDetails) => {
+    saveTripDetails(trip);
   };
 
   return (
