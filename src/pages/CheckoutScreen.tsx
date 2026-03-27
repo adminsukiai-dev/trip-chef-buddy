@@ -2,6 +2,9 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowLeft, Clock, CreditCard, MapPin, Check, Gift, Wine } from 'lucide-react';
 import { useCartStore } from '@/store/cartStore';
+import { useAuth } from '@/hooks/useAuth';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 import confetti from 'canvas-confetti';
 
 type CheckoutStep = 'delivery' | 'payment' | 'confirmed';
@@ -45,13 +48,55 @@ const CheckoutScreen = ({ onBack, onComplete }: CheckoutScreenProps) => {
     return digits;
   };
 
-  const handlePlaceOrder = () => {
+  const { user } = useAuth();
+
+  const handlePlaceOrder = async () => {
     setProcessing(true);
-    setTimeout(() => {
+
+    try {
+      if (user) {
+        // Save order to database
+        const { data: order, error: orderError } = await supabase
+          .from('orders')
+          .insert({
+            user_id: user.id,
+            status: 'confirmed',
+            delivery_slot: TIME_SLOTS.find(s => s.id === selectedSlot)?.time || '',
+            special_instructions: specialInstructions || null,
+            subtotal: totalPrice(),
+            delivery_fee: deliveryFee,
+            total,
+            resort: null,
+          })
+          .select('id')
+          .single();
+
+        if (orderError) throw orderError;
+
+        // Save order items
+        const orderItems = items.map(item => ({
+          order_id: order.id,
+          product_id: item.product.id,
+          product_name: item.product.name,
+          product_price: item.product.price,
+          quantity: item.quantity,
+        }));
+
+        const { error: itemsError } = await supabase
+          .from('order_items')
+          .insert(orderItems);
+
+        if (itemsError) throw itemsError;
+      }
+
       setStep('confirmed');
-      setProcessing(false);
       clearCart();
-    }, 1800);
+    } catch (err: any) {
+      toast.error('Failed to save order. Please try again.');
+      console.error('Order save error:', err);
+    } finally {
+      setProcessing(false);
+    }
   };
 
   // Confetti on confirmation
