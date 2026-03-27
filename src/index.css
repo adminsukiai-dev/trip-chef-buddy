@@ -1,96 +1,99 @@
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
-All colors MUST be HSL.
-*/
-
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
+    --background: 90 20% 98%;
+    --foreground: 130 30% 10%;
+    --card: 45 30% 96%;
+    --card-foreground: 130 30% 10%;
+    --popover: 90 20% 98%;
+    --popover-foreground: 130 30% 10%;
+    --primary: 130 54% 23%;
+    --primary-foreground: 45 40% 95%;
+    --secondary: 42 50% 55%;
+    --secondary-foreground: 130 30% 10%;
+    --muted: 90 10% 92%;
+    --muted-foreground: 130 10% 45%;
+    --accent: 42 50% 55%;
+    --accent-foreground: 130 30% 10%;
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 90 15% 88%;
+    --input: 90 15% 88%;
+    --ring: 130 54% 23%;
+    --radius: 1rem;
 
-    --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
+    --grocer-green: 130 54% 23%;
+    --grocer-green-light: 130 40% 35%;
+    --grocer-gold: 42 50% 55%;
+    --grocer-gold-light: 42 60% 70%;
+    --grocer-cream: 45 40% 97%;
+    --grocer-cream-dark: 45 20% 92%;
+    --grocer-warm: 30 30% 95%;
 
-    --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
+    --gradient-hero: linear-gradient(135deg, hsl(130 54% 23%), hsl(130 40% 30%), hsl(42 50% 55%));
+    --gradient-gold: linear-gradient(135deg, hsl(42 50% 55%), hsl(42 60% 65%));
+    --gradient-card: linear-gradient(180deg, hsl(45 40% 97%), hsl(45 20% 94%));
+    --gradient-glass: linear-gradient(135deg, rgba(255,255,255,0.1), rgba(255,255,255,0.05));
 
-    --primary: 222.2 47.4% 11.2%;
-    --primary-foreground: 210 40% 98%;
+    --shadow-soft: 0 2px 16px -4px rgba(27, 94, 32, 0.08);
+    --shadow-card: 0 4px 24px -8px rgba(27, 94, 32, 0.12);
+    --shadow-elevated: 0 8px 40px -12px rgba(27, 94, 32, 0.18);
+    --shadow-gold: 0 4px 20px -4px rgba(212, 168, 67, 0.3);
 
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
-
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
-
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
-
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
-
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 222.2 84% 4.9%;
-
-    --radius: 0.5rem;
+    --font-display: 'Playfair Display', serif;
+    --font-body: 'DM Sans', sans-serif;
 
     --sidebar-background: 0 0% 98%;
-
     --sidebar-foreground: 240 5.3% 26.1%;
-
     --sidebar-primary: 240 5.9% 10%;
-
     --sidebar-primary-foreground: 0 0% 98%;
-
     --sidebar-accent: 240 4.8% 95.9%;
-
     --sidebar-accent-foreground: 240 5.9% 10%;
-
     --sidebar-border: 220 13% 91%;
-
     --sidebar-ring: 217.2 91.2% 59.8%;
   }
 
   .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
-
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
-
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
-
-    --primary: 210 40% 98%;
-    --primary-foreground: 222.2 47.4% 11.2%;
-
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
-
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
-
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
-
+    --background: 140 20% 6%;
+    --foreground: 45 20% 92%;
+    --card: 140 18% 10%;
+    --card-foreground: 45 20% 92%;
+    --popover: 140 18% 10%;
+    --popover-foreground: 45 20% 92%;
+    --primary: 130 45% 40%;
+    --primary-foreground: 45 40% 95%;
+    --secondary: 42 45% 50%;
+    --secondary-foreground: 45 20% 92%;
+    --muted: 140 12% 16%;
+    --muted-foreground: 90 10% 55%;
+    --accent: 42 45% 50%;
+    --accent-foreground: 45 20% 92%;
     --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 140 12% 18%;
+    --input: 140 12% 18%;
+    --ring: 130 45% 40%;
 
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 212.7 26.8% 83.9%;
-    --sidebar-background: 240 5.9% 10%;
-    --sidebar-foreground: 240 4.8% 95.9%;
-    --sidebar-primary: 224.3 76.3% 48%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 240 3.7% 15.9%;
-    --sidebar-accent-foreground: 240 4.8% 95.9%;
-    --sidebar-border: 240 3.7% 15.9%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    --grocer-green: 130 45% 40%;
+    --grocer-green-light: 130 38% 50%;
+    --grocer-gold: 42 45% 50%;
+    --grocer-gold-light: 42 55% 60%;
+    --grocer-cream: 140 18% 10%;
+    --grocer-cream-dark: 140 15% 14%;
+    --grocer-warm: 140 12% 12%;
+
+    --gradient-hero: linear-gradient(135deg, hsl(130 45% 15%), hsl(130 38% 20%), hsl(42 45% 30%));
+    --gradient-card: linear-gradient(180deg, hsl(140 18% 10%), hsl(140 15% 8%));
+
+    --shadow-soft: 0 2px 16px -4px rgba(0, 0, 0, 0.3);
+    --shadow-card: 0 4px 24px -8px rgba(0, 0, 0, 0.4);
+    --shadow-elevated: 0 8px 40px -12px rgba(0, 0, 0, 0.5);
+    --shadow-gold: 0 4px 20px -4px rgba(212, 168, 67, 0.2);
   }
 }
 
@@ -98,8 +101,99 @@ All colors MUST be HSL.
   * {
     @apply border-border;
   }
-
   body {
     @apply bg-background text-foreground;
+    font-family: var(--font-body);
   }
+  h1, h2, h3, h4 {
+    font-family: var(--font-display);
+  }
+}
+
+@layer components {
+  .grocer-glass {
+    background: rgba(255, 255, 255, 0.08);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+  }
+
+  .grocer-bubble-user {
+    @apply bg-primary text-primary-foreground rounded-2xl rounded-br-md px-4 py-3;
+    box-shadow: var(--shadow-soft);
+  }
+
+  .grocer-bubble-ai {
+    @apply bg-card text-card-foreground rounded-2xl rounded-bl-md px-4 py-3;
+    box-shadow: var(--shadow-card);
+    border: 1px solid hsl(var(--border));
+  }
+
+  .grocer-product-card {
+    @apply bg-card rounded-xl overflow-hidden;
+    box-shadow: var(--shadow-card);
+    border: 1px solid hsl(var(--border));
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+  }
+  .grocer-product-card:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-elevated);
+  }
+
+  .grocer-floating-cart {
+    @apply rounded-full px-6 py-3;
+    background: hsl(var(--primary));
+    color: hsl(var(--primary-foreground));
+    box-shadow: var(--shadow-elevated);
+  }
+
+  .grocer-nav-item {
+    @apply flex flex-col items-center gap-1 text-xs transition-colors;
+    color: hsl(var(--muted-foreground));
+  }
+  .grocer-nav-item.active {
+    color: hsl(var(--primary));
+  }
+
+  .grocer-pill {
+    @apply px-3 py-1.5 rounded-full text-sm font-medium cursor-pointer transition-all;
+    border: 1.5px solid hsl(var(--border));
+    color: hsl(var(--foreground));
+  }
+  .grocer-pill.selected {
+    background: hsl(var(--primary));
+    color: hsl(var(--primary-foreground));
+    border-color: hsl(var(--primary));
+  }
+
+  .grocer-input-card {
+    @apply bg-card rounded-2xl p-4;
+    box-shadow: var(--shadow-soft);
+    border: 1px solid hsl(var(--border));
+  }
+}
+
+@layer utilities {
+  @keyframes pulse-ring {
+    0% { transform: scale(1); opacity: 0.6; }
+    100% { transform: scale(1.5); opacity: 0; }
+  }
+  @keyframes float-up {
+    0% { transform: translateY(20px); opacity: 0; }
+    100% { transform: translateY(0); opacity: 1; }
+  }
+  @keyframes typing-bounce {
+    0%, 60%, 100% { transform: translateY(0); }
+    30% { transform: translateY(-4px); }
+  }
+
+  .animate-pulse-ring {
+    animation: pulse-ring 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  }
+  .animate-float-up {
+    animation: float-up 0.4s ease-out forwards;
+  }
+  .animate-typing-1 { animation: typing-bounce 1.4s ease-in-out infinite; }
+  .animate-typing-2 { animation: typing-bounce 1.4s ease-in-out 0.2s infinite; }
+  .animate-typing-3 { animation: typing-bounce 1.4s ease-in-out 0.4s infinite; }
 }
