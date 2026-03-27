@@ -81,8 +81,21 @@ const ProductCard = ({ product, compact = false, userAllergens = [], userDietary
           )}
         </div>
         <div className="flex-1 min-w-0">
-          <p className="text-[10px] uppercase tracking-wider text-muted-foreground">{product.brand}</p>
-          <p className="text-sm font-medium leading-tight truncate">{product.name}</p>
+          <div className="flex items-start justify-between">
+            <div className="min-w-0 flex-1">
+              <p className="text-[10px] uppercase tracking-wider text-muted-foreground">{product.brand}</p>
+              <p className="text-sm font-medium leading-tight truncate">{product.name}</p>
+            </div>
+            {showFavorite && onToggleFavorite && (
+              <motion.button
+                whileTap={{ scale: 0.8 }}
+                onClick={(e) => { e.stopPropagation(); onToggleFavorite(product.id); }}
+                className="ml-1 flex-shrink-0"
+              >
+                <Heart size={16} className={isFavorite ? 'fill-red-500 text-red-500' : 'text-muted-foreground'} />
+              </motion.button>
+            )}
+          </div>
           <div className="flex flex-wrap gap-1 mt-1">
             <AllergenBadge />
             <DietaryBadge />
