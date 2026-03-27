@@ -17,7 +17,7 @@ const ResortStep = ({ onComplete }: { onComplete: (resort: string) => void }) =>
 
   return (
     <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }}
-      className="w-full max-w-sm px-6 space-y-4">
+      className="w-full max-w-sm px-6 space-y-4 relative z-10">
       <div className="flex items-center gap-3 mb-2">
         <div className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center">
           <MapPin size={20} className="text-accent" />
@@ -34,10 +34,11 @@ const ResortStep = ({ onComplete }: { onComplete: (resort: string) => void }) =>
         placeholder="Search resorts..."
         className="w-full bg-white/10 border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder:text-white/30 outline-none focus:border-accent/50 transition-colors"
       />
-      <div className="max-h-40 overflow-y-auto space-y-1 scrollbar-none">
-        {filtered.slice(0, 6).map(resort => (
+      <div className="max-h-48 overflow-y-auto space-y-1 scrollbar-none">
+        {filtered.slice(0, 10).map(resort => (
           <button key={resort} onClick={() => { setSelected(resort); setSearch(resort); }}
-            className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-colors ${selected === resort ? 'bg-accent/20 text-accent' : 'text-white/70 hover:bg-white/5'}`}>
+            className={`w-full text-left px-3 py-2.5 rounded-lg text-sm transition-colors flex items-center gap-2 ${selected === resort ? 'bg-accent/20 text-accent' : 'text-white/70 hover:bg-white/5'}`}>
+            {selected === resort && <span className="text-accent">✓</span>}
             {resort}
           </button>
         ))}
@@ -62,7 +63,7 @@ const DateStep = ({ onComplete }: { onComplete: (date: string) => void }) => {
 
   return (
     <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }}
-      className="w-full max-w-sm px-6 space-y-4">
+      className="w-full max-w-sm px-6 space-y-4 relative z-10">
       <div className="flex items-center gap-3 mb-2">
         <div className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center">
           <CalendarDays size={20} className="text-accent" />
@@ -117,7 +118,7 @@ const GuestsStep = ({ onComplete }: { onComplete: (guests: { adults: number; kid
 
   return (
     <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }}
-      className="w-full max-w-sm px-6 space-y-4">
+      className="w-full max-w-sm px-6 space-y-4 relative z-10">
       <div className="flex items-center gap-3 mb-2">
         <div className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center">
           <Users size={20} className="text-accent" />
@@ -150,8 +151,8 @@ const SplashScreen = ({ onStart }: { onStart: (mode: string) => void }) => {
       className="fixed inset-0 z-50 flex flex-col items-center justify-center overflow-hidden"
       style={{ background: 'linear-gradient(160deg, #060E08 0%, #0D2818 40%, #143820 100%)' }}>
       
-      {/* Subtle particles bg */}
-      <div className="absolute inset-0 overflow-hidden">
+      {/* Subtle particles bg — pointer-events-none so it doesn't block clicks */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
         {[...Array(20)].map((_, i) => (
           <motion.div key={i}
             className="absolute w-1 h-1 rounded-full bg-accent/20"
@@ -211,7 +212,7 @@ const SplashScreen = ({ onStart }: { onStart: (mode: string) => void }) => {
 
       {/* Progress dots */}
       {step !== 'welcome' && (
-        <div className="absolute bottom-8 flex gap-2">
+        <div className="absolute bottom-8 flex gap-2 z-10">
           {['resort', 'date', 'guests'].map((s, i) => (
             <div key={s} className={`w-1.5 h-1.5 rounded-full transition-colors ${
               ['resort', 'date', 'guests'].indexOf(step) >= i ? 'bg-accent' : 'bg-white/15'}`} />
