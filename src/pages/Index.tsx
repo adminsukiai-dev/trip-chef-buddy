@@ -9,6 +9,8 @@ import CheckoutScreen from '@/pages/CheckoutScreen';
 import OrdersScreen from '@/pages/OrdersScreen';
 import AccountScreen from '@/pages/AccountScreen';
 import { ORLANDO_RESORTS } from '@/data/products';
+import { useAuth } from '@/hooks/useAuth';
+import { useTripProfile, TripDetails } from '@/hooks/useTripProfile';
 
 /* ─── Typewriter Effect ─── */
 const Typewriter = ({ text, delay = 0 }: { text: string; delay?: number }) => {
@@ -160,7 +162,7 @@ const GuestsStep = ({ onComplete }: { onComplete: (guests: { adults: number; kid
 };
 
 /* ─── Splash & Onboarding ─── */
-const SplashScreen = ({ onStart }: { onStart: (mode: string) => void }) => {
+const SplashScreen = ({ onStart, onSaveTrip }: { onStart: (mode: string) => void; onSaveTrip?: (trip: TripDetails) => void }) => {
   const [step, setStep] = useState<'welcome' | 'resort' | 'date' | 'guests'>('welcome');
   const [tripInfo, setTripInfo] = useState({ resort: '', date: '', adults: 0, kids: 0 });
 
@@ -239,7 +241,9 @@ const SplashScreen = ({ onStart }: { onStart: (mode: string) => void }) => {
 
         {step === 'guests' && (
           <GuestsStep key="guests" onComplete={({ adults, kids }) => {
-            setTripInfo(prev => ({ ...prev, adults, kids }));
+            const finalTrip = { ...tripInfo, adults, kids };
+            setTripInfo(finalTrip);
+            onSaveTrip?.(finalTrip);
             onStart('grocer');
           }} />
         )}
@@ -259,18 +263,32 @@ const SplashScreen = ({ onStart }: { onStart: (mode: string) => void }) => {
 };
 
 const Index = () => {
+  const { user, loading: authLoading } = useAuth();
+  const { savedTrip, loading: tripLoading, saveTripDetails } = useTripProfile();
   const [showSplash, setShowSplash] = useState(true);
   const [activeTab, setActiveTab] = useState('grocer');
+
+  // Skip onboarding for returning users with saved trip data
+  useEffect(() => {
+    if (authLoading || tripLoading) return;
+    if (user && savedTrip?.resort) {
+      setShowSplash(false);
+    }
+  }, [user, savedTrip, authLoading, tripLoading]);
 
   const handleStart = (mode: string) => {
     setActiveTab(mode);
     setShowSplash(false);
   };
 
+  const handleSaveTrip = (trip: TripDetails) => {
+    saveTripDetails(trip);
+  };
+
   return (
     <div className="h-screen flex flex-col bg-background overflow-hidden">
       <AnimatePresence>
-        {showSplash && <SplashScreen onStart={handleStart} />}
+        {showSplash && <SplashScreen onStart={handleStart} onSaveTrip={handleSaveTrip} />}
       </AnimatePresence>
 
       <div className="flex-1 overflow-hidden">
