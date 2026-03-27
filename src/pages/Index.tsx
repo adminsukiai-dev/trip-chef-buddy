@@ -9,6 +9,8 @@ import CheckoutScreen from '@/pages/CheckoutScreen';
 import OrdersScreen from '@/pages/OrdersScreen';
 import AccountScreen from '@/pages/AccountScreen';
 import { ORLANDO_RESORTS } from '@/data/products';
+import { useAuth } from '@/hooks/useAuth';
+import { useTripProfile, TripDetails } from '@/hooks/useTripProfile';
 
 /* ─── Typewriter Effect ─── */
 const Typewriter = ({ text, delay = 0 }: { text: string; delay?: number }) => {
