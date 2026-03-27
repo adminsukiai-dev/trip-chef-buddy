@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { User, Heart, Shield, Gift, ChevronRight, LogOut, MapPin, Users, Pencil, Check, X } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useTripProfile } from '@/hooks/useTripProfile';
+import { useFavorites } from '@/hooks/useFavorites';
 import { supabase } from '@/integrations/supabase/client';
 import { ORLANDO_RESORTS } from '@/data/products';
 import AuthPage from '@/pages/AuthPage';
@@ -9,6 +10,7 @@ import ProfileEditor from '@/components/ProfileEditor';
 import ProfileFamilyScreen from '@/components/ProfileFamilyScreen';
 import FavoritesScreen from '@/components/FavoritesScreen';
 import { toast } from 'sonner';
+import { Badge } from '@/components/ui/badge';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const menuItems = [
@@ -155,6 +157,7 @@ const TripEditor = () => {
 /* ─── Main Account Screen ─── */
 const AccountScreen = () => {
   const { user, loading, signOut } = useAuth();
+  const { favoriteIds } = useFavorites();
   const [showAuth, setShowAuth] = useState(false);
   const [showProfileFamily, setShowProfileFamily] = useState(false);
   const [showFavorites, setShowFavorites] = useState(false);
@@ -236,12 +239,17 @@ const AccountScreen = () => {
               if (item.label === 'Profile & Family' && user) setShowProfileFamily(true);
               if (item.label === 'Favorites' && user) setShowFavorites(true);
             }}
-            className="w-full grocer-input-card flex items-center gap-3">
+            className="w-full grocer-input-card flex items-center gap-3 relative">
             <item.icon size={20} className="text-primary" />
             <div className="flex-1 text-left">
               <p className="text-sm font-medium">{item.label}</p>
               <p className="text-xs text-muted-foreground">{item.desc}</p>
             </div>
+            {item.label === 'Favorites' && favoriteIds.size > 0 && (
+              <Badge variant="default" className="text-[10px] px-1.5 py-0 min-w-[20px] justify-center">
+                {favoriteIds.size}
+              </Badge>
+            )}
             <ChevronRight size={16} className="text-muted-foreground" />
           </button>
         ))}
