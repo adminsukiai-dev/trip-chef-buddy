@@ -29,7 +29,7 @@ const ALLERGEN_LABELS: Record<string, string> = {
   'sesame': 'Sesame', 'gluten': 'Gluten', 'corn': 'Corn', 'sulfites': 'Sulfites',
 };
 
-const ProductCard = ({ product, compact = false, userAllergens = [], userDietary = [] }: ProductCardProps) => {
+const ProductCard = ({ product, compact = false, userAllergens = [], userDietary = [], showFavorite = false, isFavorite = false, onToggleFavorite }: ProductCardProps) => {
   const { items, addItem, updateQuantity, removeItem } = useCartStore();
   const cartItem = items.find(i => i.product.id === product.id);
   const qty = cartItem?.quantity ?? 0;
