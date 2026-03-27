@@ -96,32 +96,41 @@ export type Database = {
       }
       profiles: {
         Row: {
+          allergens: string[] | null
           avatar_url: string | null
           created_at: string
           default_adults: number | null
           default_kids: number | null
           default_resort: string | null
+          dietary_preferences: string[] | null
           display_name: string | null
+          family_members: Json | null
           id: string
           updated_at: string
         }
         Insert: {
+          allergens?: string[] | null
           avatar_url?: string | null
           created_at?: string
           default_adults?: number | null
           default_kids?: number | null
           default_resort?: string | null
+          dietary_preferences?: string[] | null
           display_name?: string | null
+          family_members?: Json | null
           id: string
           updated_at?: string
         }
         Update: {
+          allergens?: string[] | null
           avatar_url?: string | null
           created_at?: string
           default_adults?: number | null
           default_kids?: number | null
           default_resort?: string | null
+          dietary_preferences?: string[] | null
           display_name?: string | null
+          family_members?: Json | null
           id?: string
           updated_at?: string
         }
