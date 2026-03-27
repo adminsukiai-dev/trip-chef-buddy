@@ -1,229 +1,246 @@
 import { useRef, useMemo } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
-import { Float } from '@react-three/drei';
 import * as THREE from 'three';
 
 export type OrbMood = 'idle' | 'listening' | 'thinking' | 'presenting' | 'celebrating' | 'sad';
 
-const emerald = new THREE.Color('#0D4A1A');
-const emeraldGlow = new THREE.Color('#1B7A30');
+const green = new THREE.Color('#2E8B3D');
 const gold = new THREE.Color('#D4A843');
-const softGreen = new THREE.Color('#2E8B3D');
+const warmGold = new THREE.Color('#FFE0A0');
+const softGreen = new THREE.Color('#4CAF50');
 
-/* ─── Ambient Particles (fireflies/sparkles) ─── */
-function AmbientParticles({ mood }: { mood: OrbMood }) {
-  const count = 60;
+/* ─── Ring Particles ─── */
+function RingParticles({ mood }: { mood: OrbMood }) {
+  const count = 200;
   const ref = useRef<THREE.Points>(null!);
 
-  const { positions, colors, sizes } = useMemo(() => {
+  const { basePositions } = useMemo(() => {
     const pos = new Float32Array(count * 3);
-    const col = new Float32Array(count * 3);
-    const sz = new Float32Array(count);
-    const palette = [gold, emeraldGlow, new THREE.Color('#A8D5A2'), new THREE.Color('#FFE0A0')];
     for (let i = 0; i < count; i++) {
-      const theta = Math.random() * Math.PI * 2;
-      const phi = Math.acos(2 * Math.random() - 1);
-      const r = 0.5 + Math.random() * 0.6;
-      pos[i * 3] = r * Math.sin(phi) * Math.cos(theta);
-      pos[i * 3 + 1] = r * Math.sin(phi) * Math.sin(theta);
-      pos[i * 3 + 2] = r * Math.cos(phi);
-      const c = palette[Math.floor(Math.random() * palette.length)];
-      col[i * 3] = c.r; col[i * 3 + 1] = c.g; col[i * 3 + 2] = c.b;
-      sz[i] = 0.008 + Math.random() * 0.02;
+      const angle = (i / count) * Math.PI * 2;
+      const radius = 0.5;
+      pos[i * 3] = Math.cos(angle) * radius;
+      pos[i * 3 + 1] = 0;
+      pos[i * 3 + 2] = Math.sin(angle) * radius;
     }
-    return { positions: pos, colors: col, sizes: sz };
+    return { basePositions: pos };
+  }, []);
+
+  const colors = useMemo(() => {
+    const col = new Float32Array(count * 3);
+    for (let i = 0; i < count; i++) {
+      const t = i / count;
+      const c = new THREE.Color().lerpColors(green, gold, t < 0.5 ? t * 2 : 2 - t * 2);
+      col[i * 3] = c.r;
+      col[i * 3 + 1] = c.g;
+      col[i * 3 + 2] = c.b;
+    }
+    return col;
   }, []);
 
   useFrame(({ clock }) => {
     if (!ref.current) return;
     const t = clock.getElapsedTime();
-    const speed = mood === 'listening' ? 0.4 : mood === 'celebrating' ? 0.6 : mood === 'thinking' ? 0.3 : 0.12;
-    ref.current.rotation.y = t * speed;
-    ref.current.rotation.x = Math.sin(t * 0.08) * 0.15;
-    
     const geo = ref.current.geometry;
     const posAttr = geo.getAttribute('position');
+    const colAttr = geo.getAttribute('color');
+
+    const speed = mood === 'listening' ? 0.8 : mood === 'thinking' ? 0.3 : mood === 'celebrating' ? 1.2 : 0.15;
+    const radiusMod = mood === 'listening' ? 0.58 : mood === 'thinking' ? 0.42 : 0.5;
+    const spread = mood === 'thinking' ? 0.06 : mood === 'celebrating' ? 0.04 : 0.02;
+
     for (let i = 0; i < count; i++) {
-      const phase = i * 0.5;
-      const scatter = mood === 'thinking' ? 0.15 * Math.sin(t * 2 + phase) : 0;
-      const baseR = 0.5 + (i % 10) * 0.06;
-      const r = baseR + scatter;
-      const theta = (i / count) * Math.PI * 2 + t * speed;
-      const phi = Math.acos(2 * ((i * 0.618) % 1) - 1);
+      const baseAngle = (i / count) * Math.PI * 2;
+      const angle = baseAngle + t * speed;
+      const trail = mood === 'listening' ? Math.sin(baseAngle * 3 + t * 2) * 0.03 : 0;
+      const r = radiusMod + Math.sin(baseAngle * 4 + t) * spread + trail;
+      const yOff = Math.sin(baseAngle * 2 + t * 0.5) * 0.015;
+
       posAttr.setXYZ(i,
-        r * Math.sin(phi) * Math.cos(theta),
-        r * Math.sin(phi) * Math.sin(theta) + Math.sin(t + phase) * 0.02,
-        r * Math.cos(phi)
+        Math.cos(angle) * r,
+        yOff,
+        Math.sin(angle) * r
       );
+
+      // Shift colors toward gold when listening
+      const blend = mood === 'listening' ? 0.6 + Math.sin(baseAngle + t * 3) * 0.4 :
+                    mood === 'celebrating' ? 0.5 + Math.sin(baseAngle + t * 4) * 0.5 :
+                    Math.sin(baseAngle + t * 0.3) * 0.3 + 0.3;
+      const c = new THREE.Color().lerpColors(green, gold, blend);
+      colAttr.setXYZ(i, c.r, c.g, c.b);
     }
     posAttr.needsUpdate = true;
+    colAttr.needsUpdate = true;
 
-    const mat = ref.current.material as THREE.PointsMaterial;
-    mat.opacity = 0.35 + Math.sin(t * 1.5) * 0.15;
+    // Tilt ring based on mood
+    const tiltX = mood === 'listening' ? 0.4 : mood === 'thinking' ? 0.2 : 0.3;
+    ref.current.rotation.x = THREE.MathUtils.lerp(ref.current.rotation.x, tiltX, 0.03);
+    ref.current.rotation.y = t * speed * 0.3;
   });
 
   return (
     <points ref={ref}>
       <bufferGeometry>
-        <bufferAttribute attach="attributes-position" count={count} array={positions} itemSize={3} />
+        <bufferAttribute attach="attributes-position" count={count} array={new Float32Array(basePositions)} itemSize={3} />
         <bufferAttribute attach="attributes-color" count={count} array={colors} itemSize={3} />
       </bufferGeometry>
-      <pointsMaterial size={0.018} vertexColors sizeAttenuation transparent opacity={0.5} depthWrite={false} />
+      <pointsMaterial size={0.012} vertexColors sizeAttenuation transparent opacity={0.9} depthWrite={false} blending={THREE.AdditiveBlending} />
     </points>
   );
 }
 
-/* ─── Gold Orbital Ring ─── */
-function OrbitalRing({ mood }: { mood: OrbMood }) {
+/* ─── Thin Luminous Ring (the main structure) ─── */
+function LuminousRing({ mood }: { mood: OrbMood }) {
   const ref = useRef<THREE.Mesh>(null!);
 
   useFrame(({ clock }) => {
     if (!ref.current) return;
     const t = clock.getElapsedTime();
-    ref.current.rotation.x = Math.PI / 2.2 + Math.sin(t * 0.3) * 0.08;
-    ref.current.rotation.z = t * 0.15;
-    
-    const targetScale = mood === 'listening' ? 1.15 : mood === 'celebrating' ? 1.1 : 1.0;
-    const pulse = mood === 'listening' ? Math.sin(t * 3) * 0.03 : 0;
-    const s = THREE.MathUtils.lerp(ref.current.scale.x, targetScale + pulse, 0.05);
+    const mat = ref.current.material as THREE.MeshStandardMaterial;
+
+    const targetScale = mood === 'listening' ? 1.15 : mood === 'thinking' ? 0.88 : mood === 'celebrating' ? 1.1 : 1.0;
+    const pulse = mood === 'listening' ? Math.sin(t * 2.5) * 0.03 : Math.sin(t * 0.8) * 0.01;
+    const s = THREE.MathUtils.lerp(ref.current.scale.x, targetScale + pulse, 0.04);
     ref.current.scale.setScalar(s);
-    
-    const mat = ref.current.material as THREE.MeshStandardMaterial;
-    mat.opacity = mood === 'listening' ? 0.9 : 0.6;
+
+    ref.current.rotation.x = 0.3 + Math.sin(t * 0.3) * 0.05;
+    ref.current.rotation.y = t * 0.12;
+
+    // Color shift
+    const isGold = mood === 'listening' || mood === 'celebrating';
+    const targetColor = isGold ? gold : green;
+    mat.color.lerp(targetColor, 0.05);
+    mat.emissive.lerp(targetColor, 0.05);
+    mat.emissiveIntensity = mood === 'listening' ? 1.2 + Math.sin(t * 3) * 0.4 :
+                            mood === 'presenting' ? 0.8 + Math.sin(t * 2) * 0.2 :
+                            0.6 + Math.sin(t * 0.8) * 0.15;
+    mat.opacity = mood === 'thinking' ? 0.5 + Math.sin(t * 2) * 0.1 : 0.7;
   });
 
   return (
-    <mesh ref={ref} rotation={[Math.PI / 2.2, 0, 0]}>
-      <torusGeometry args={[0.44, 0.008, 16, 100]} />
-      <meshStandardMaterial color={gold} emissive={gold} emissiveIntensity={0.8} metalness={0.95} roughness={0.1} transparent opacity={0.6} />
+    <mesh ref={ref} rotation={[0.3, 0, 0]}>
+      <torusGeometry args={[0.5, 0.006, 16, 128]} />
+      <meshStandardMaterial color={green} emissive={green} emissiveIntensity={0.6} metalness={0.95} roughness={0.05} transparent opacity={0.7} />
     </mesh>
   );
 }
 
-/* ─── Second ring ─── */
-function SecondRing({ mood }: { mood: OrbMood }) {
+/* ─── Second thinner ring ─── */
+function InnerRing({ mood }: { mood: OrbMood }) {
   const ref = useRef<THREE.Mesh>(null!);
 
   useFrame(({ clock }) => {
     if (!ref.current) return;
     const t = clock.getElapsedTime();
-    ref.current.rotation.x = Math.PI / 1.8 + Math.cos(t * 0.2) * 0.1;
-    ref.current.rotation.z = -t * 0.1;
-    const vis = mood === 'listening' || mood === 'celebrating';
+    ref.current.rotation.x = 0.5 + Math.cos(t * 0.2) * 0.1;
+    ref.current.rotation.y = -t * 0.08;
+    ref.current.rotation.z = Math.sin(t * 0.15) * 0.1;
+
     const mat = ref.current.material as THREE.MeshStandardMaterial;
-    mat.opacity = THREE.MathUtils.lerp(mat.opacity, vis ? 0.35 : 0.1, 0.05);
+    mat.opacity = mood === 'listening' ? 0.6 : mood === 'thinking' ? 0.3 : 0.4;
+    mat.emissiveIntensity = mood === 'celebrating' ? 1.0 : 0.5;
   });
 
   return (
-    <mesh ref={ref} rotation={[Math.PI / 1.8, 0, 0]}>
-      <torusGeometry args={[0.5, 0.005, 16, 100]} />
-      <meshStandardMaterial color={gold} emissive={gold} emissiveIntensity={0.4} metalness={0.9} roughness={0.15} transparent opacity={0.1} />
+    <mesh ref={ref} rotation={[0.5, 0, 0]}>
+      <torusGeometry args={[0.35, 0.003, 16, 100]} />
+      <meshStandardMaterial color={gold} emissive={gold} emissiveIntensity={0.5} metalness={0.9} roughness={0.1} transparent opacity={0.4} />
     </mesh>
   );
 }
 
-/* ─── Core Energy Sphere ─── */
-function EnergySphere({ mood }: { mood: OrbMood }) {
-  const coreRef = useRef<THREE.Mesh>(null!);
-  const glowRef = useRef<THREE.Mesh>(null!);
-  const outerRef = useRef<THREE.Mesh>(null!);
+/* ─── Center Glow (the breathing core) ─── */
+function CenterGlow({ mood }: { mood: OrbMood }) {
+  const ref = useRef<THREE.Mesh>(null!);
+
+  useFrame(({ clock }) => {
+    if (!ref.current) return;
+    const t = clock.getElapsedTime();
+    const mat = ref.current.material as THREE.MeshBasicMaterial;
+
+    const breathe = mood === 'listening' ? 0.25 + Math.sin(t * 2) * 0.08 :
+                    mood === 'presenting' ? 0.2 + Math.sin(t * 1.5) * 0.05 :
+                    mood === 'thinking' ? 0.12 + Math.sin(t * 3) * 0.04 :
+                    0.15 + Math.sin(t * 0.6) * 0.03;
+    mat.opacity = breathe;
+
+    const s = mood === 'listening' ? 1.1 + Math.sin(t * 2.5) * 0.1 :
+              mood === 'presenting' ? 1.0 + Math.sin(t * 1.5) * 0.05 :
+              0.9 + Math.sin(t * 0.8) * 0.03;
+    ref.current.scale.setScalar(s);
+  });
+
+  return (
+    <mesh ref={ref}>
+      <sphereGeometry args={[0.18, 32, 32]} />
+      <meshBasicMaterial color={softGreen} transparent opacity={0.15} blending={THREE.AdditiveBlending} />
+    </mesh>
+  );
+}
+
+/* ─── Ripple Waves (when speaking/presenting) ─── */
+function RippleWaves({ mood }: { mood: OrbMood }) {
+  const count = 3;
+  const refs = useRef<THREE.Mesh[]>([]);
+
+  useFrame(({ clock }) => {
+    const t = clock.getElapsedTime();
+    const active = mood === 'presenting' || mood === 'celebrating';
+    refs.current.forEach((mesh, i) => {
+      if (!mesh) return;
+      const phase = (t * 0.8 + i * 1.2) % 3;
+      const scale = active ? 0.3 + phase * 0.25 : 0;
+      mesh.scale.setScalar(THREE.MathUtils.lerp(mesh.scale.x, scale, 0.05));
+      const mat = mesh.material as THREE.MeshBasicMaterial;
+      mat.opacity = active ? Math.max(0, 0.15 - phase * 0.05) : 0;
+    });
+  });
+
+  return (
+    <>
+      {Array.from({ length: count }).map((_, i) => (
+        <mesh key={i} ref={el => { if (el) refs.current[i] = el; }} rotation={[Math.PI / 2, 0, 0]}>
+          <ringGeometry args={[0.48, 0.5, 64]} />
+          <meshBasicMaterial color={gold} transparent opacity={0} side={THREE.DoubleSide} blending={THREE.AdditiveBlending} />
+        </mesh>
+      ))}
+    </>
+  );
+}
+
+/* ─── Reflection plane ─── */
+function ReflectionPlane() {
+  return (
+    <mesh position={[0, -0.45, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+      <planeGeometry args={[2, 2]} />
+      <meshBasicMaterial color="#0D2818" transparent opacity={0.3} blending={THREE.AdditiveBlending} />
+    </mesh>
+  );
+}
+
+/* ─── Scene ─── */
+function AIRingScene({ mood }: { mood: OrbMood }) {
   const groupRef = useRef<THREE.Group>(null!);
 
   useFrame(({ clock }) => {
-    const t = clock.getElapsedTime();
     if (!groupRef.current) return;
-
-    // Breathing
-    const breathScale = mood === 'listening' ? 1.08 + Math.sin(t * 2) * 0.04 :
-                        mood === 'celebrating' ? 1.05 + Math.sin(t * 4) * 0.03 :
-                        mood === 'thinking' ? 0.95 + Math.sin(t * 1.5) * 0.02 :
-                        1.0 + Math.sin(t * 0.8) * 0.015;
-    groupRef.current.scale.setScalar(THREE.MathUtils.lerp(groupRef.current.scale.x, breathScale, 0.06));
-
-    // Celebration bounce
-    if (mood === 'celebrating') {
-      groupRef.current.position.y = Math.abs(Math.sin(t * 4)) * 0.05;
-    } else {
-      groupRef.current.position.y = THREE.MathUtils.lerp(groupRef.current.position.y, 0, 0.05);
-    }
-
-    // Core material
-    if (coreRef.current) {
-      const mat = coreRef.current.material as THREE.MeshStandardMaterial;
-      mat.emissiveIntensity = mood === 'listening' ? 0.6 + Math.sin(t * 3) * 0.3 :
-                              mood === 'presenting' ? 0.5 + Math.sin(t * 2) * 0.2 :
-                              mood === 'celebrating' ? 0.7 + Math.sin(t * 5) * 0.3 :
-                              0.35 + Math.sin(t * 0.8) * 0.1;
-    }
-
-    // Glow shell
-    if (glowRef.current) {
-      const mat = glowRef.current.material as THREE.MeshStandardMaterial;
-      mat.emissiveIntensity = mood === 'listening' ? 0.4 + Math.sin(t * 2.5) * 0.2 :
-                              0.2 + Math.sin(t * 1.2) * 0.08;
-      const s = mood === 'presenting' ? 1.02 + Math.sin(t * 1.5) * 0.01 : 1.0;
-      glowRef.current.scale.setScalar(s);
-    }
-
-    // Outer atmosphere
-    if (outerRef.current) {
-      const mat = outerRef.current.material as THREE.MeshStandardMaterial;
-      mat.opacity = mood === 'listening' ? 0.12 + Math.sin(t * 2) * 0.05 :
-                    mood === 'celebrating' ? 0.15 :
-                    0.06 + Math.sin(t * 0.5) * 0.02;
-    }
+    const t = clock.getElapsedTime();
+    // Gentle float
+    groupRef.current.position.y = Math.sin(t * 0.5) * 0.02;
   });
 
   return (
     <group ref={groupRef}>
-      {/* Inner core — deep emerald */}
-      <mesh ref={coreRef}>
-        <sphereGeometry args={[0.28, 64, 64]} />
-        <meshStandardMaterial
-          color={emerald}
-          roughness={0.08}
-          metalness={0.4}
-          emissive={emeraldGlow}
-          emissiveIntensity={0.35}
-        />
-      </mesh>
+      <LuminousRing mood={mood} />
+      <InnerRing mood={mood} />
+      <RingParticles mood={mood} />
+      <CenterGlow mood={mood} />
+      <RippleWaves mood={mood} />
+      <ReflectionPlane />
 
-      {/* Mid glow shell */}
-      <mesh ref={glowRef}>
-        <sphereGeometry args={[0.33, 64, 64]} />
-        <meshStandardMaterial
-          color={softGreen}
-          emissive={emeraldGlow}
-          emissiveIntensity={0.2}
-          transparent opacity={0.18}
-          roughness={0.05}
-          metalness={0.2}
-        />
-      </mesh>
-
-      {/* Outer atmospheric glow */}
-      <mesh ref={outerRef}>
-        <sphereGeometry args={[0.40, 64, 64]} />
-        <meshStandardMaterial
-          color={softGreen}
-          emissive={emeraldGlow}
-          emissiveIntensity={0.15}
-          transparent opacity={0.06}
-          roughness={0} metalness={0}
-          side={THREE.BackSide}
-        />
-      </mesh>
-
-      {/* Orbital rings */}
-      <OrbitalRing mood={mood} />
-      <SecondRing mood={mood} />
-
-      {/* Particles */}
-      <AmbientParticles mood={mood} />
-
-      {/* Inner light */}
-      <pointLight position={[0, 0, 0]} color={emeraldGlow} intensity={1.2} distance={3} />
-      <pointLight position={[0, 0.2, 0.3]} color={gold} intensity={0.3} distance={1.5} />
+      {/* Lighting */}
+      <pointLight position={[0, 0, 0]} color={softGreen} intensity={0.5} distance={3} />
+      <pointLight position={[0, 0.3, 0.5]} color={gold} intensity={0.2} distance={2} />
     </group>
   );
 }
@@ -236,23 +253,19 @@ interface GrocerOrbProps {
 }
 
 export default function GrocerOrb({ mood = 'idle', className = '', size = 'md' }: GrocerOrbProps) {
-  const fov = size === 'sm' ? 52 : size === 'lg' ? 28 : 40;
-  
+  const fov = size === 'sm' ? 55 : size === 'lg' ? 25 : 40;
+
   return (
     <div className={`w-full ${className}`} style={{ touchAction: 'none' }}>
       <Canvas
-        camera={{ position: [0, 0, 2], fov }}
+        camera={{ position: [0, 0.3, 1.8], fov }}
         dpr={[1, 2]}
         gl={{ antialias: true, alpha: true }}
         style={{ background: 'transparent' }}
       >
-        <ambientLight intensity={0.3} />
-        <directionalLight position={[3, 4, 5]} intensity={0.6} color="#FFFBF0" />
-        <directionalLight position={[-2, 2, -3]} intensity={0.15} color="#B8E6C1" />
-
-        <Float speed={1.5} rotationIntensity={0.03} floatIntensity={0.2} floatingRange={[-0.02, 0.02]}>
-          <EnergySphere mood={mood} />
-        </Float>
+        <ambientLight intensity={0.15} />
+        <directionalLight position={[2, 3, 4]} intensity={0.3} color="#FFFBF0" />
+        <AIRingScene mood={mood} />
       </Canvas>
     </div>
   );
