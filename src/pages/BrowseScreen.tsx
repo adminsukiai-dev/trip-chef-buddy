@@ -4,6 +4,7 @@ import { Search, ArrowLeft, Wine } from 'lucide-react';
 import { CATEGORIES, PRODUCTS, BEVERAGE_SUBCATEGORIES, Product } from '@/data/products';
 import ProductCard from '@/components/ProductCard';
 import AgeVerificationModal from '@/components/AgeVerificationModal';
+import { useUserDietaryProfile } from '@/hooks/useUserDietaryProfile';
 
 const FILTERS = ['All', 'Organic', 'Gluten-Free', 'Vegan', 'Kid-Friendly', 'Popular'];
 
@@ -15,6 +16,8 @@ const BrowseScreen = () => {
   const [ageVerified, setAgeVerified] = useState(false);
   const [showAgeModal, setShowAgeModal] = useState(false);
   const [pendingCategory, setPendingCategory] = useState<string | null>(null);
+  const { allergens, familyAllergens, dietaryPreferences } = useUserDietaryProfile();
+  const allAllergens = [...new Set([...allergens, ...familyAllergens])];
 
   const handleCategoryClick = (catId: string) => {
     const cat = CATEGORIES.find(c => c.id === catId);
@@ -147,7 +150,7 @@ const BrowseScreen = () => {
             <div className="space-y-3">
               {filteredProducts.map(product => (
                 <div key={product.id} className="relative">
-                  <ProductCard product={product} compact />
+                  <ProductCard product={product} compact userAllergens={allAllergens} userDietary={dietaryPreferences} />
                   {product.isAlcohol && (
                     <div className="absolute top-2 right-2 px-2 py-0.5 rounded-full text-[9px] font-bold flex items-center gap-1"
                       style={{ background: 'rgba(212,168,67,0.15)', color: 'hsl(42, 55%, 50%)', border: '1px solid rgba(212,168,67,0.3)' }}>
