@@ -5,6 +5,7 @@ import BottomNav from '@/components/BottomNav';
 import ConciergeScreen from '@/pages/ConciergeScreen';
 import BrowseScreen from '@/pages/BrowseScreen';
 import CartScreen from '@/pages/CartScreen';
+import CheckoutScreen from '@/pages/CheckoutScreen';
 import OrdersScreen from '@/pages/OrdersScreen';
 import AccountScreen from '@/pages/AccountScreen';
 import { ORLANDO_RESORTS } from '@/data/products';
