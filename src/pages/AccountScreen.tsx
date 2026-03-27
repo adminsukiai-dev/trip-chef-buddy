@@ -190,6 +190,10 @@ const AccountScreen = () => {
     return <ProfileFamilyScreen onBack={() => setShowProfileFamily(false)} />;
   }
 
+  if (user && showFavorites) {
+    return <FavoritesScreen onBack={() => setShowFavorites(false)} />;
+  }
+
   const handleSignOut = async () => {
     await signOut();
     toast.success('Signed out successfully');
