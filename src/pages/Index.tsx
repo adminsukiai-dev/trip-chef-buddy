@@ -1,60 +1,226 @@
 import { useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { Leaf } from 'lucide-react';
+import { Leaf, Users, CalendarDays, MapPin, ChevronRight } from 'lucide-react';
 import BottomNav from '@/components/BottomNav';
 import ConciergeScreen from '@/pages/ConciergeScreen';
 import BrowseScreen from '@/pages/BrowseScreen';
 import CartScreen from '@/pages/CartScreen';
 import OrdersScreen from '@/pages/OrdersScreen';
 import AccountScreen from '@/pages/AccountScreen';
+import { ORLANDO_RESORTS } from '@/data/products';
 
-const SplashScreen = ({ onStart }: { onStart: (mode: string) => void }) => (
-  <motion.div
-    initial={{ opacity: 1 }}
-    exit={{ opacity: 0 }}
-    className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-primary"
-  >
-    <motion.div
-      initial={{ scale: 0.8, opacity: 0 }}
-      animate={{ scale: 1, opacity: 1 }}
-      transition={{ duration: 0.6, ease: 'easeOut' }}
-      className="flex flex-col items-center gap-6"
-    >
-      <div className="w-20 h-20 rounded-3xl bg-primary-foreground/10 flex items-center justify-center">
-        <Leaf size={40} className="text-primary-foreground" />
-      </div>
-      <div className="text-center">
-        <h1 className="text-3xl font-display font-bold text-primary-foreground">Garden Grocer</h1>
-        <p className="text-primary-foreground/70 text-sm mt-1">Your AI Personal Shopper</p>
-      </div>
-    </motion.div>
+/* ─── Trip Setup Step Components ─── */
+const ResortStep = ({ onComplete }: { onComplete: (resort: string) => void }) => {
+  const [search, setSearch] = useState('');
+  const [selected, setSelected] = useState('');
+  const filtered = ORLANDO_RESORTS.filter(r => r.toLowerCase().includes(search.toLowerCase()));
 
-    <motion.div
-      initial={{ y: 40, opacity: 0 }}
-      animate={{ y: 0, opacity: 1 }}
-      transition={{ delay: 0.4, duration: 0.5 }}
-      className="mt-16 w-full max-w-sm px-8 space-y-3"
-    >
-      <p className="text-primary-foreground/80 text-center text-sm mb-4">How would you like to shop?</p>
-      <motion.button
-        whileTap={{ scale: 0.97 }}
-        onClick={() => onStart('grocer')}
-        className="w-full py-4 rounded-2xl bg-primary-foreground flex items-center justify-center gap-3 font-semibold text-primary"
-      >
-        <Leaf size={20} />
-        Talk to Grocer
-        <span className="text-xs bg-secondary/20 px-2 py-0.5 rounded-full">Recommended</span>
-      </motion.button>
-      <motion.button
-        whileTap={{ scale: 0.97 }}
-        onClick={() => onStart('browse')}
-        className="w-full py-4 rounded-2xl border-2 border-primary-foreground/30 text-primary-foreground font-medium"
-      >
-        Browse Products
+  return (
+    <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }}
+      className="w-full max-w-sm px-6 space-y-4">
+      <div className="flex items-center gap-3 mb-2">
+        <div className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center">
+          <MapPin size={20} className="text-accent" />
+        </div>
+        <div>
+          <h3 className="text-lg font-display font-semibold text-white">Where are you staying?</h3>
+          <p className="text-xs text-white/50">Resort, hotel, or vacation rental</p>
+        </div>
+      </div>
+      <input
+        type="text"
+        value={search}
+        onChange={e => { setSearch(e.target.value); setSelected(''); }}
+        placeholder="Search resorts..."
+        className="w-full bg-white/10 border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder:text-white/30 outline-none focus:border-accent/50 transition-colors"
+      />
+      <div className="max-h-40 overflow-y-auto space-y-1 scrollbar-none">
+        {filtered.slice(0, 6).map(resort => (
+          <button key={resort} onClick={() => { setSelected(resort); setSearch(resort); }}
+            className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-colors ${selected === resort ? 'bg-accent/20 text-accent' : 'text-white/70 hover:bg-white/5'}`}>
+            {resort}
+          </button>
+        ))}
+      </div>
+      <motion.button whileTap={{ scale: 0.97 }} onClick={() => selected && onComplete(selected)}
+        disabled={!selected}
+        className="w-full py-3 rounded-xl bg-accent text-white font-semibold text-sm disabled:opacity-30 flex items-center justify-center gap-2 transition-opacity">
+        Continue <ChevronRight size={16} />
       </motion.button>
     </motion.div>
-  </motion.div>
-);
+  );
+};
+
+const DateStep = ({ onComplete }: { onComplete: (date: string) => void }) => {
+  const today = new Date();
+  const dates = Array.from({ length: 14 }, (_, i) => {
+    const d = new Date(today);
+    d.setDate(d.getDate() + i);
+    return d;
+  });
+  const [selected, setSelected] = useState<Date | null>(null);
+
+  return (
+    <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }}
+      className="w-full max-w-sm px-6 space-y-4">
+      <div className="flex items-center gap-3 mb-2">
+        <div className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center">
+          <CalendarDays size={20} className="text-accent" />
+        </div>
+        <div>
+          <h3 className="text-lg font-display font-semibold text-white">When do you arrive?</h3>
+          <p className="text-xs text-white/50">Select your check-in date</p>
+        </div>
+      </div>
+      <div className="grid grid-cols-7 gap-1.5">
+        {dates.map((d) => {
+          const isSelected = selected?.toDateString() === d.toDateString();
+          return (
+            <motion.button key={d.toISOString()} whileTap={{ scale: 0.9 }} onClick={() => setSelected(d)}
+              className={`flex flex-col items-center py-2 rounded-lg text-xs transition-colors ${isSelected ? 'bg-accent text-white' : 'bg-white/5 text-white/60 hover:bg-white/10'}`}>
+              <span className="text-[9px] uppercase">{d.toLocaleDateString('en', { weekday: 'short' })}</span>
+              <span className="font-semibold text-sm">{d.getDate()}</span>
+            </motion.button>
+          );
+        })}
+      </div>
+      <motion.button whileTap={{ scale: 0.97 }} onClick={() => selected && onComplete(selected.toLocaleDateString('en', { weekday: 'long', month: 'short', day: 'numeric' }))}
+        disabled={!selected}
+        className="w-full py-3 rounded-xl bg-accent text-white font-semibold text-sm disabled:opacity-30 flex items-center justify-center gap-2 transition-opacity">
+        Continue <ChevronRight size={16} />
+      </motion.button>
+    </motion.div>
+  );
+};
+
+const GuestsStep = ({ onComplete }: { onComplete: (guests: { adults: number; kids: number }) => void }) => {
+  const [adults, setAdults] = useState(2);
+  const [kids, setKids] = useState(0);
+
+  const Counter = ({ label, value, onChange }: { label: string; value: number; onChange: (v: number) => void }) => (
+    <div className="flex items-center justify-between py-3">
+      <span className="text-sm text-white/80">{label}</span>
+      <div className="flex items-center gap-4">
+        <motion.button whileTap={{ scale: 0.85 }} onClick={() => onChange(Math.max(0, value - 1))}
+          className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-white/60 hover:bg-white/15 transition-colors text-lg">
+          −
+        </motion.button>
+        <motion.span key={value} initial={{ scale: 1.3 }} animate={{ scale: 1 }}
+          className="text-lg font-bold text-white w-6 text-center">{value}</motion.span>
+        <motion.button whileTap={{ scale: 0.85 }} onClick={() => onChange(value + 1)}
+          className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-white/60 hover:bg-white/15 transition-colors text-lg">
+          +
+        </motion.button>
+      </div>
+    </div>
+  );
+
+  return (
+    <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }}
+      className="w-full max-w-sm px-6 space-y-4">
+      <div className="flex items-center gap-3 mb-2">
+        <div className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center">
+          <Users size={20} className="text-accent" />
+        </div>
+        <div>
+          <h3 className="text-lg font-display font-semibold text-white">Who's coming?</h3>
+          <p className="text-xs text-white/50">We'll tailor quantities to your group</p>
+        </div>
+      </div>
+      <div className="bg-white/5 rounded-xl px-4 divide-y divide-white/5">
+        <Counter label="Adults" value={adults} onChange={setAdults} />
+        <Counter label="Kids" value={kids} onChange={setKids} />
+      </div>
+      <motion.button whileTap={{ scale: 0.97 }} onClick={() => (adults + kids > 0) && onComplete({ adults, kids })}
+        disabled={adults + kids === 0}
+        className="w-full py-3 rounded-xl bg-accent text-white font-semibold text-sm disabled:opacity-30 flex items-center justify-center gap-2 transition-opacity">
+        Let's Shop <ChevronRight size={16} />
+      </motion.button>
+    </motion.div>
+  );
+};
+
+/* ─── Splash & Onboarding ─── */
+const SplashScreen = ({ onStart }: { onStart: (mode: string) => void }) => {
+  const [step, setStep] = useState<'welcome' | 'resort' | 'date' | 'guests'>('welcome');
+  const [tripInfo, setTripInfo] = useState({ resort: '', date: '', adults: 0, kids: 0 });
+
+  return (
+    <motion.div initial={{ opacity: 1 }} exit={{ opacity: 0 }}
+      className="fixed inset-0 z-50 flex flex-col items-center justify-center overflow-hidden"
+      style={{ background: 'linear-gradient(160deg, #060E08 0%, #0D2818 40%, #143820 100%)' }}>
+      
+      {/* Subtle particles bg */}
+      <div className="absolute inset-0 overflow-hidden">
+        {[...Array(20)].map((_, i) => (
+          <motion.div key={i}
+            className="absolute w-1 h-1 rounded-full bg-accent/20"
+            style={{ left: `${Math.random() * 100}%`, top: `${Math.random() * 100}%` }}
+            animate={{ y: [-10, 10], opacity: [0.1, 0.4, 0.1] }}
+            transition={{ repeat: Infinity, duration: 3 + Math.random() * 4, delay: Math.random() * 2 }}
+          />
+        ))}
+      </div>
+
+      <AnimatePresence mode="wait">
+        {step === 'welcome' && (
+          <motion.div key="welcome" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0, y: -20 }}
+            className="flex flex-col items-center gap-6 z-10">
+            <motion.div initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}
+              transition={{ duration: 0.6, ease: 'easeOut' }}
+              className="w-16 h-16 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center">
+              <Leaf size={32} className="text-accent" />
+            </motion.div>
+            <div className="text-center">
+              <h1 className="text-3xl font-display font-bold text-white">Garden Grocer</h1>
+              <p className="text-white/40 text-sm mt-1.5 font-light">Your AI vacation kitchen concierge</p>
+            </div>
+
+            <motion.div initial={{ y: 30, opacity: 0 }} animate={{ y: 0, opacity: 1 }}
+              transition={{ delay: 0.3 }} className="mt-8 w-full max-w-sm px-8 space-y-3">
+              <motion.button whileTap={{ scale: 0.97 }} onClick={() => setStep('resort')}
+                className="w-full py-4 rounded-2xl bg-white/95 flex items-center justify-center gap-3 font-semibold text-sm"
+                style={{ color: '#0D2818' }}>
+                <Leaf size={18} />
+                Talk to Grocer
+                <span className="text-[10px] px-2 py-0.5 rounded-full bg-accent/15 text-accent font-semibold">Recommended</span>
+              </motion.button>
+              <motion.button whileTap={{ scale: 0.97 }} onClick={() => onStart('browse')}
+                className="w-full py-4 rounded-2xl border border-white/15 text-white/70 font-medium text-sm hover:bg-white/5 transition-colors">
+                Browse Products
+              </motion.button>
+            </motion.div>
+          </motion.div>
+        )}
+
+        {step === 'resort' && (
+          <ResortStep key="resort" onComplete={(resort) => { setTripInfo(prev => ({ ...prev, resort })); setStep('date'); }} />
+        )}
+
+        {step === 'date' && (
+          <DateStep key="date" onComplete={(date) => { setTripInfo(prev => ({ ...prev, date })); setStep('guests'); }} />
+        )}
+
+        {step === 'guests' && (
+          <GuestsStep key="guests" onComplete={({ adults, kids }) => {
+            setTripInfo(prev => ({ ...prev, adults, kids }));
+            onStart('grocer');
+          }} />
+        )}
+      </AnimatePresence>
+
+      {/* Progress dots */}
+      {step !== 'welcome' && (
+        <div className="absolute bottom-8 flex gap-2">
+          {['resort', 'date', 'guests'].map((s, i) => (
+            <div key={s} className={`w-1.5 h-1.5 rounded-full transition-colors ${
+              ['resort', 'date', 'guests'].indexOf(step) >= i ? 'bg-accent' : 'bg-white/15'}`} />
+          ))}
+        </div>
+      )}
+    </motion.div>
+  );
+};
 
 const Index = () => {
   const [showSplash, setShowSplash] = useState(true);
