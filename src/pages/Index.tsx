@@ -205,7 +205,9 @@ const SplashScreen = ({ onStart }: { onStart: (mode: string) => void }) => {
             <motion.div initial={{ y: 30, opacity: 0 }} animate={{ y: 0, opacity: 1 }}
               transition={{ delay: 0.5, duration: 0.6 }} className="mt-4 w-full max-w-sm px-8 space-y-3.5">
               <motion.button whileTap={{ scale: 0.96 }} whileHover={{ scale: 1.02 }} onClick={() => setStep('resort')}
-                className="w-full py-5 rounded-2xl flex items-center justify-center gap-3 font-semibold text-[15px] shadow-lg relative overflow-hidden"
+                animate={{ boxShadow: ['0 0 20px 2px rgba(212,168,67,0.15)', '0 0 35px 8px rgba(212,168,67,0.3)', '0 0 20px 2px rgba(212,168,67,0.15)'] }}
+                transition={{ duration: 2.5, repeat: Infinity, ease: 'easeInOut' }}
+                className="w-full py-5 rounded-2xl flex items-center justify-center gap-3 font-semibold text-[15px] relative overflow-hidden"
                 style={{ background: 'linear-gradient(135deg, rgba(255,255,255,0.95), rgba(255,255,255,0.85))', color: '#0D2818' }}>
                 {/* Shimmer sweep */}
                 <motion.div
