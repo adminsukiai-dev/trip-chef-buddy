@@ -152,7 +152,7 @@ const BrowseScreen = () => {
             <div className="space-y-3">
               {filteredProducts.map(product => (
                 <div key={product.id} className="relative">
-                  <ProductCard product={product} compact userAllergens={allAllergens} userDietary={dietaryPreferences} />
+                  <ProductCard product={product} compact userAllergens={allAllergens} userDietary={dietaryPreferences} showFavorite isFavorite={isFavorite(product.id)} onToggleFavorite={toggleFavorite} />
                   {product.isAlcohol && (
                     <div className="absolute top-2 right-2 px-2 py-0.5 rounded-full text-[9px] font-bold flex items-center gap-1"
                       style={{ background: 'rgba(212,168,67,0.15)', color: 'hsl(42, 55%, 50%)', border: '1px solid rgba(212,168,67,0.3)' }}>
