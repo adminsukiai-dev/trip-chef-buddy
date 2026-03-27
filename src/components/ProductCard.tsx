@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { Plus, Minus, AlertTriangle, Leaf } from 'lucide-react';
+import { Plus, Minus, AlertTriangle, Leaf, Heart } from 'lucide-react';
 import { Product } from '@/data/products';
 import { useCartStore } from '@/store/cartStore';
 
@@ -8,6 +8,9 @@ interface ProductCardProps {
   compact?: boolean;
   userAllergens?: string[];
   userDietary?: string[];
+  showFavorite?: boolean;
+  isFavorite?: boolean;
+  onToggleFavorite?: (productId: string) => void;
 }
 
 const getMatchingAllergens = (product: Product, userAllergens: string[]): string[] => {
