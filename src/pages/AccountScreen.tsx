@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { User, Heart, Shield, Gift, ChevronRight, LogOut, MapPin, Users, Pencil, Check, X } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useTripProfile } from '@/hooks/useTripProfile';
+import { useFavorites } from '@/hooks/useFavorites';
 import { supabase } from '@/integrations/supabase/client';
 import { ORLANDO_RESORTS } from '@/data/products';
 import AuthPage from '@/pages/AuthPage';
@@ -9,6 +10,7 @@ import ProfileEditor from '@/components/ProfileEditor';
 import ProfileFamilyScreen from '@/components/ProfileFamilyScreen';
 import FavoritesScreen from '@/components/FavoritesScreen';
 import { toast } from 'sonner';
+import { Badge } from '@/components/ui/badge';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const menuItems = [
