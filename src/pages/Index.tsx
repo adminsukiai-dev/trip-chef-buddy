@@ -162,7 +162,7 @@ const GuestsStep = ({ onComplete }: { onComplete: (guests: { adults: number; kid
 };
 
 /* ─── Splash & Onboarding ─── */
-const SplashScreen = ({ onStart }: { onStart: (mode: string) => void }) => {
+const SplashScreen = ({ onStart, onSaveTrip }: { onStart: (mode: string) => void; onSaveTrip?: (trip: TripDetails) => void }) => {
   const [step, setStep] = useState<'welcome' | 'resort' | 'date' | 'guests'>('welcome');
   const [tripInfo, setTripInfo] = useState({ resort: '', date: '', adults: 0, kids: 0 });
 
