@@ -167,28 +167,34 @@ const SplashScreen = ({ onStart }: { onStart: (mode: string) => void }) => {
       <AnimatePresence mode="wait">
         {step === 'welcome' && (
           <motion.div key="welcome" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0, y: -20 }}
-            className="flex flex-col items-center gap-6 z-10">
-            <motion.div initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}
-              transition={{ duration: 0.6, ease: 'easeOut' }}
-              className="w-16 h-16 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center">
-              <Leaf size={32} className="text-accent" />
+            className="flex flex-col items-center gap-8 z-10">
+            <motion.div initial={{ scale: 0.6, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}
+              transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
+              className="w-20 h-20 rounded-3xl flex items-center justify-center"
+              style={{ background: 'linear-gradient(135deg, rgba(212,168,67,0.15), rgba(46,139,61,0.1))', border: '1px solid rgba(212,168,67,0.2)' }}>
+              <motion.div animate={{ rotate: [0, 5, -5, 0] }} transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}>
+                <Leaf size={36} className="text-accent" />
+              </motion.div>
             </motion.div>
             <div className="text-center">
-              <h1 className="text-3xl font-display font-bold text-white">Garden Grocer</h1>
-              <p className="text-white/40 text-sm mt-1.5 font-light">Your AI vacation kitchen concierge</p>
+              <motion.h1 initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}
+                className="text-4xl font-display font-bold text-white tracking-tight">Garden Grocer</motion.h1>
+              <motion.p initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.35 }}
+                className="text-white/40 text-sm mt-2 font-light tracking-wide">Your AI vacation kitchen concierge</motion.p>
             </div>
 
             <motion.div initial={{ y: 30, opacity: 0 }} animate={{ y: 0, opacity: 1 }}
-              transition={{ delay: 0.3 }} className="mt-8 w-full max-w-sm px-8 space-y-3">
-              <motion.button whileTap={{ scale: 0.97 }} onClick={() => setStep('resort')}
-                className="w-full py-4 rounded-2xl bg-white/95 flex items-center justify-center gap-3 font-semibold text-sm"
-                style={{ color: '#0D2818' }}>
-                <Leaf size={18} />
+              transition={{ delay: 0.5, duration: 0.6 }} className="mt-4 w-full max-w-sm px-8 space-y-3.5">
+              <motion.button whileTap={{ scale: 0.96 }} whileHover={{ scale: 1.02 }} onClick={() => setStep('resort')}
+                className="w-full py-5 rounded-2xl flex items-center justify-center gap-3 font-semibold text-[15px] shadow-lg"
+                style={{ background: 'linear-gradient(135deg, rgba(255,255,255,0.95), rgba(255,255,255,0.85))', color: '#0D2818' }}>
+                <Leaf size={20} />
                 Talk to Grocer
-                <span className="text-[10px] px-2 py-0.5 rounded-full bg-accent/15 text-accent font-semibold">Recommended</span>
+                <span className="text-[10px] px-2.5 py-1 rounded-full font-semibold" style={{ background: 'rgba(212,168,67,0.12)', color: 'hsl(42 55% 50%)' }}>Recommended</span>
               </motion.button>
-              <motion.button whileTap={{ scale: 0.97 }} onClick={() => onStart('browse')}
-                className="w-full py-4 rounded-2xl border border-white/15 text-white/70 font-medium text-sm hover:bg-white/5 transition-colors">
+              <motion.button whileTap={{ scale: 0.96 }} whileHover={{ scale: 1.02 }} onClick={() => onStart('browse')}
+                className="w-full py-5 rounded-2xl border font-medium text-[15px] transition-colors"
+                style={{ borderColor: 'rgba(255,255,255,0.12)', color: 'rgba(255,255,255,0.6)', background: 'rgba(255,255,255,0.03)' }}>
                 Browse Products
               </motion.button>
             </motion.div>
