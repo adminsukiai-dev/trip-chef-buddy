@@ -251,7 +251,7 @@ const ConciergeScreen = ({ onViewCart }: ConciergeScreenProps) => {
                 className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
                 style={{ marginTop: idx === 0 ? 0 : sameSender ? 12 : 20 }}
               >
-                <div className="max-w-[85%] space-y-3">
+                <div className="max-w-[80%] space-y-3">
                   {msg.role === 'assistant' ? (
                     <div
                       className="px-4 py-3.5"
