@@ -7,7 +7,7 @@ import AgeVerificationModal from '@/components/AgeVerificationModal';
 import { useUserDietaryProfile } from '@/hooks/useUserDietaryProfile';
 import { useFavorites } from '@/hooks/useFavorites';
 
-const FILTERS = ['All', 'Organic', 'Gluten-Free', 'Vegan', 'Kid-Friendly', 'Popular'];
+const FILTERS = ['All', 'Favorites', 'Organic', 'Gluten-Free', 'Vegan', 'Kid-Friendly', 'Popular'];
 
 const BrowseScreen = () => {
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
