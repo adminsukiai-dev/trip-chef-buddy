@@ -234,6 +234,7 @@ const AccountScreen = () => {
           <button key={item.label}
             onClick={() => {
               if (item.label === 'Profile & Family' && user) setShowProfileFamily(true);
+              if (item.label === 'Favorites' && user) setShowFavorites(true);
             }}
             className="w-full grocer-input-card flex items-center gap-3">
             <item.icon size={20} className="text-primary" />
