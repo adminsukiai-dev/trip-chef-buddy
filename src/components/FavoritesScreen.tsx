@@ -66,7 +66,7 @@ const FavoritesScreen = ({ onBack }: FavoritesScreenProps) => {
                 userAllergens={allAllergens}
                 userDietary={dietaryPreferences}
                 showFavorite
-                isFavorite={isFavorite(product.id)}
+                isFavorite={isFavorite(String(product.id))}
                 onToggleFavorite={toggleFavorite}
               />
             ))}
