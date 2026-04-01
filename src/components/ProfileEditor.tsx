@@ -1,7 +1,7 @@
 import { useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Camera, Pencil, Check, X, Loader2 } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
+// Supabase removed — using local storage for avatar
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
 

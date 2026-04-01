@@ -1,6 +1,6 @@
 import { ArrowLeft, Heart } from 'lucide-react';
 import { motion } from 'framer-motion';
-import { PRODUCTS } from '@/data/products';
+// Products loaded from API via favorites hook
 import ProductCard from '@/components/ProductCard';
 import { useFavorites } from '@/hooks/useFavorites';
 import { useUserDietaryProfile } from '@/hooks/useUserDietaryProfile';

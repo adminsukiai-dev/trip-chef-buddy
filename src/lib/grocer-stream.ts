@@ -11,7 +11,7 @@ export async function streamGrocerChat({
   onDone: (fullText: string) => void;
   onError: (error: string) => void;
 }) {
-  const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/grocer-chat`;
+  const CHAT_URL = `${import.meta.env.VITE_GG_API_URL || "https://api2.gardengrocer.com/api"}/suki/chat`;
 
   let resp: Response;
   try {
@@ -19,7 +19,7 @@ export async function streamGrocerChat({
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+        "Content-Type": "application/json",
       },
       body: JSON.stringify({ messages }),
     });
