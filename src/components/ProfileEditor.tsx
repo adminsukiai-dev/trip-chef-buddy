@@ -43,7 +43,7 @@ const ProfileEditor = ({ displayName, avatarUrl, onUpdate }: ProfileEditorProps)
       const { error: updateError } = await supabase
         .from('profiles')
         .update({ avatar_url: url, updated_at: new Date().toISOString() })
-        .eq('id', user.id);
+        .eq('id', String(user.id));
 
       if (updateError) throw updateError;
 
