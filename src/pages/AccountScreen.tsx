@@ -3,7 +3,7 @@ import { User, Heart, Shield, Gift, ChevronRight, LogOut, MapPin, Users, Pencil,
 import { useAuth } from '@/hooks/useAuth';
 import { useTripProfile } from '@/hooks/useTripProfile';
 import { useFavorites } from '@/hooks/useFavorites';
-
+import { supabase } from '@/integrations/supabase/client';
 import { ORLANDO_RESORTS } from '@/data/products';
 import AuthPage from '@/pages/AuthPage';
 import ProfileEditor from '@/components/ProfileEditor';
