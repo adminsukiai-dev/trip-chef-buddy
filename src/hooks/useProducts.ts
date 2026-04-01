@@ -20,22 +20,27 @@ export interface GGCategory {
   name: string;
   image?: string;
   product_count?: number;
+  categories?: { id: number; name: string; count: number }[];
 }
 
-// Map GG API product to the format the UI expects
+// Map GG API product (nested attributes format) to flat format
 export function mapProduct(p: any): GGProduct {
+  // Handle both flat and nested {id, attributes: {...}} format
+  const attrs = p.attributes || p;
   return {
-    id: p.id,
-    name: p.name || p.item_name || '',
-    price: parseFloat(p.sale > 0 ? p.sale : p.price) || 0,
-    sale: parseFloat(p.sale) || 0,
-    image: p.photo_url || p.HighResPhotoUrl || p.image || `https://cdn.gardengrocer.com/images/products/${p.id}.jpg`,
-    is_liquor: !!p.is_liquor,
-    taxable: !!p.taxable,
-    unavailable: !!p.unavailable,
-    category_name: p.category_name || '',
-    aisle_name: p.aisle_name || '',
-    brand: p.brand || p.manufacturer || '',
+    id: p.id || attrs.id,
+    name: attrs.name || attrs.item_name || p.name || '',
+    price: parseFloat(attrs.sale > 0 ? attrs.sale : (attrs.price || p.price)) || 0,
+    sale: parseFloat(attrs.sale || p.sale) || 0,
+    image: attrs.imageHighRes || attrs.imageBig || attrs.imageMedium || attrs.imageSmall
+      || p.imageHighRes || p.imageBig || p.photo_url || p.HighResPhotoUrl
+      || `https://cdn.gardengrocer.com/attachments/photos/med/${p.id}.jpeg`,
+    is_liquor: !!(attrs.alcohol || attrs.is_liquor || p.is_liquor),
+    taxable: !!(attrs.taxable || p.taxable),
+    unavailable: !!(attrs.unavailable || p.unavailable),
+    category_name: attrs.category_name || p.category_name || '',
+    aisle_name: attrs.aisle_name || p.aisle_name || '',
+    brand: attrs.brand_name || attrs.brand || p.manufacturer || '',
   };
 }
 
@@ -46,12 +51,24 @@ export function useCategories() {
   useEffect(() => {
     productsApi.getCategories()
       .then(res => {
-        const cats = (res.data || res || []).map((c: any) => ({
-          id: c.id,
-          name: c.name || c.aisle_name || '',
-          image: c.image || c.photo_url || '',
-          product_count: c.product_count || 0,
-        }));
+        // API returns: [{type: "aisle", id, attributes: {name, imageUrl, categories: [...]}}]
+        const raw = res.data || res || [];
+        const cats: GGCategory[] = raw.map((c: any) => {
+          const attrs = c.attributes || c;
+          const subcats = (attrs.categories || []).map((sc: any) => ({
+            id: sc.id,
+            name: sc.attributes?.name || sc.name || '',
+            count: sc.attributes?.count || sc.count || 0,
+          }));
+          const totalCount = subcats.reduce((sum: number, s: any) => sum + (s.count || 0), 0);
+          return {
+            id: c.id,
+            name: attrs.name || '',
+            image: attrs.imageUrl || attrs.image || '',
+            product_count: totalCount,
+            categories: subcats,
+          };
+        });
         setCategories(cats);
       })
       .catch(() => setCategories([]))
@@ -70,7 +87,8 @@ export function useCategoryProducts(categoryId: number | null) {
     setLoading(true);
     productsApi.getCategoryProducts(categoryId)
       .then(res => {
-        const prods = (res.data || res || []).map(mapProduct);
+        const raw = res.data || res || [];
+        const prods = raw.map(mapProduct);
         setProducts(prods);
       })
       .catch(() => setProducts([]))
@@ -92,7 +110,8 @@ export function useProductSearch() {
     setLoading(true);
     try {
       const res = await productsApi.search(query);
-      const prods = (res.data || res || []).map(mapProduct);
+      const raw = res.data || res || [];
+      const prods = raw.map(mapProduct);
       setResults(prods);
     } catch {
       setResults([]);
@@ -111,7 +130,8 @@ export function useBestSellers() {
   useEffect(() => {
     productsApi.getBestSellers()
       .then(res => {
-        const prods = (res.data || res || []).map(mapProduct);
+        const raw = res.data || res || [];
+        const prods = raw.map(mapProduct);
         setProducts(prods);
       })
       .catch(() => setProducts([]))
@@ -128,7 +148,8 @@ export function useDeals() {
   useEffect(() => {
     productsApi.getDeals()
       .then(res => {
-        const prods = (res.data || res || []).map(mapProduct);
+        const raw = res.data || res || [];
+        const prods = raw.map(mapProduct);
         setProducts(prods);
       })
       .catch(() => setProducts([]))
