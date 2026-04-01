@@ -1,7 +1,7 @@
 import { useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Camera, Pencil, Check, X, Loader2 } from 'lucide-react';
-// Supabase removed — using local storage for avatar
+import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
 
@@ -43,7 +43,7 @@ const ProfileEditor = ({ displayName, avatarUrl, onUpdate }: ProfileEditorProps)
       const { error: updateError } = await supabase
         .from('profiles')
         .update({ avatar_url: url, updated_at: new Date().toISOString() })
-        .eq('id', user.id);
+        .eq('id', String(user.id));
 
       if (updateError) throw updateError;
 
@@ -63,7 +63,7 @@ const ProfileEditor = ({ displayName, avatarUrl, onUpdate }: ProfileEditorProps)
       const { error } = await supabase
         .from('profiles')
         .update({ display_name: name.trim(), updated_at: new Date().toISOString() })
-        .eq('id', user.id);
+        .eq('id', String(user.id));
 
       if (error) throw error;
 

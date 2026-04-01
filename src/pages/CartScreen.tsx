@@ -50,7 +50,7 @@ const CartScreen = ({ onTalkToGrocer, onCheckout }: CartScreenProps) => {
                   <img src={item.product.image} alt={item.product.name} className="w-14 h-14 rounded-lg object-cover" />
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium truncate">{item.product.name}</p>
-                    <p className="text-xs text-muted-foreground">{item.product.brand}</p>
+                    <p className="text-xs text-muted-foreground">${item.product.price.toFixed(2)} each</p>
                     <p className="text-sm font-bold text-primary">${(item.product.price * item.quantity).toFixed(2)}</p>
                   </div>
                   <div className="flex items-center gap-2">

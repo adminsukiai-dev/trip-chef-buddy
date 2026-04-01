@@ -3,7 +3,7 @@ import { User, Heart, Shield, Gift, ChevronRight, LogOut, MapPin, Users, Pencil,
 import { useAuth } from '@/hooks/useAuth';
 import { useTripProfile } from '@/hooks/useTripProfile';
 import { useFavorites } from '@/hooks/useFavorites';
-
+import { supabase } from '@/integrations/supabase/client';
 import { ORLANDO_RESORTS } from '@/data/products';
 import AuthPage from '@/pages/AuthPage';
 import ProfileEditor from '@/components/ProfileEditor';
@@ -168,7 +168,7 @@ const AccountScreen = () => {
     const { data } = await supabase
       .from('profiles')
       .select('display_name, avatar_url')
-      .eq('id', user.id)
+      .eq('id', String(user.id))
       .single();
     if (data) setProfile(data);
   }, [user]);
@@ -202,7 +202,7 @@ const AccountScreen = () => {
     toast.success('Signed out successfully');
   };
 
-  const displayName = profile.display_name || user?.user_metadata?.display_name || user?.email || 'Guest User';
+  const displayName = profile.display_name || (user ? `${user.first_name} ${user.last_name}`.trim() : '') || user?.email || 'Guest User';
 
   return (
     <div className="flex flex-col h-full overflow-y-auto px-4 pt-4 pb-20">

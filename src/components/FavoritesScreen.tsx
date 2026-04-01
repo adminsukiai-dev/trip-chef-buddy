@@ -1,9 +1,11 @@
 import { ArrowLeft, Heart } from 'lucide-react';
 import { motion } from 'framer-motion';
-// Products loaded from API via favorites hook
 import ProductCard from '@/components/ProductCard';
 import { useFavorites } from '@/hooks/useFavorites';
 import { useUserDietaryProfile } from '@/hooks/useUserDietaryProfile';
+import { useState, useEffect } from 'react';
+import { products as productsApi } from '@/lib/api';
+import { mapProduct, GGProduct } from '@/hooks/useProducts';
 
 interface FavoritesScreenProps {
   onBack: () => void;
@@ -12,9 +14,15 @@ interface FavoritesScreenProps {
 const FavoritesScreen = ({ onBack }: FavoritesScreenProps) => {
   const { favoriteIds, loading, toggleFavorite, isFavorite } = useFavorites();
   const { allergens, familyAllergens, dietaryPreferences } = useUserDietaryProfile();
+  const [favoriteProducts, setFavoriteProducts] = useState<GGProduct[]>([]);
   const allAllergens = [...new Set([...allergens, ...familyAllergens])];
 
-  const favoriteProducts = PRODUCTS.filter(p => favoriteIds.has(p.id));
+  useEffect(() => {
+    if (favoriteIds.size === 0) { setFavoriteProducts([]); return; }
+    const ids = Array.from(favoriteIds);
+    Promise.all(ids.map(id => productsApi.getDetails(Number(id)).then(res => mapProduct(res.data || res)).catch(() => null)))
+      .then(results => setFavoriteProducts(results.filter(Boolean) as GGProduct[]));
+  }, [favoriteIds]);
 
   return (
     <div className="flex flex-col h-full overflow-hidden">
@@ -58,7 +66,7 @@ const FavoritesScreen = ({ onBack }: FavoritesScreenProps) => {
                 userAllergens={allAllergens}
                 userDietary={dietaryPreferences}
                 showFavorite
-                isFavorite={isFavorite(product.id)}
+                isFavorite={isFavorite(String(product.id))}
                 onToggleFavorite={toggleFavorite}
               />
             ))}

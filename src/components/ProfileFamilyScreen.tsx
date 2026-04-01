@@ -63,7 +63,7 @@ const ProfileFamilyScreen = ({ onBack }: ProfileFamilyScreenProps) => {
     const { data } = await supabase
       .from('profiles')
       .select('dietary_preferences, allergens, family_members')
-      .eq('id', user.id)
+      .eq('id', String(user.id))
       .single();
 
     if (data) {
@@ -84,7 +84,7 @@ const ProfileFamilyScreen = ({ onBack }: ProfileFamilyScreenProps) => {
     const { error } = await supabase
       .from('profiles')
       .update({ ...updates, updated_at: new Date().toISOString() } as any)
-      .eq('id', user.id);
+      .eq('id', String(user.id));
 
     if (error) {
       toast.error('Failed to save');
