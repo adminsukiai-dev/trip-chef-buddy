@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+import { user as userApi } from '@/lib/api';
 import { useAuth } from '@/hooks/useAuth';
 
 export const useFavorites = () => {
@@ -13,11 +13,13 @@ export const useFavorites = () => {
       setLoading(false);
       return;
     }
-    const { data } = await supabase
-      .from('favorites')
-      .select('product_id')
-      .eq('user_id', user.id);
-    setFavoriteIds(new Set((data ?? []).map(d => d.product_id)));
+    try {
+      const res = await userApi.getFavorites();
+      const ids = (res.data || []).map((f: any) => String(f.product_id || f.id));
+      setFavoriteIds(new Set(ids));
+    } catch {
+      setFavoriteIds(new Set());
+    }
     setLoading(false);
   }, [user]);
 
@@ -37,16 +39,20 @@ export const useFavorites = () => {
       return next;
     });
 
-    if (isFav) {
-      await supabase
-        .from('favorites')
-        .delete()
-        .eq('user_id', user.id)
-        .eq('product_id', productId);
-    } else {
-      await supabase
-        .from('favorites')
-        .insert({ user_id: user.id, product_id: productId });
+    try {
+      if (isFav) {
+        await userApi.removeFromFavorites(Number(productId));
+      } else {
+        await userApi.addToFavorites(Number(productId));
+      }
+    } catch {
+      // Revert on error
+      setFavoriteIds(prev => {
+        const next = new Set(prev);
+        if (isFav) next.add(productId);
+        else next.delete(productId);
+        return next;
+      });
     }
   }, [user, favoriteIds]);
 

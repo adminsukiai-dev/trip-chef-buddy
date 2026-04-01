@@ -1,10 +1,17 @@
 import { useState, useEffect, createContext, useContext, ReactNode } from 'react';
-import { supabase } from '@/integrations/supabase/client';
-import type { User, Session } from '@supabase/supabase-js';
+import { auth as authApi, setAuthToken, getAuthToken } from '@/lib/api';
+
+interface GGUser {
+  id: number;
+  first_name: string;
+  last_name: string;
+  email: string;
+  token: string;
+  group_id: number;
+}
 
 interface AuthContextType {
-  user: User | null;
-  session: Session | null;
+  user: GGUser | null;
   loading: boolean;
   signUp: (email: string, password: string, displayName?: string) => Promise<{ error: string | null }>;
   signIn: (email: string, password: string) => Promise<{ error: string | null }>;
@@ -16,61 +23,84 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
-  const [user, setUser] = useState<User | null>(null);
-  const [session, setSession] = useState<Session | null>(null);
+  const [user, setUser] = useState<GGUser | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      setLoading(false);
-    });
-
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      setLoading(false);
-    });
-
-    return () => subscription.unsubscribe();
+    const token = getAuthToken();
+    const savedUser = localStorage.getItem('gg_user');
+    if (token && savedUser) {
+      try {
+        setUser(JSON.parse(savedUser));
+      } catch {
+        setAuthToken(null);
+        localStorage.removeItem('gg_user');
+      }
+    }
+    setLoading(false);
   }, []);
 
   const signUp = async (email: string, password: string, displayName?: string) => {
-    const { error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        emailRedirectTo: window.location.origin,
-        data: { display_name: displayName },
-      },
-    });
-    return { error: error?.message ?? null };
+    try {
+      const [firstName, ...lastParts] = (displayName || 'Guest').split(' ');
+      const lastName = lastParts.join(' ') || 'User';
+      const response = await authApi.register(email, password, firstName, lastName);
+      const userData: GGUser = {
+        id: response.data.id,
+        first_name: response.data.first_name,
+        last_name: response.data.last_name,
+        email: response.data.email || email,
+        token: response.data.token,
+        group_id: response.data.group_id || 3,
+      };
+      setUser(userData);
+      localStorage.setItem('gg_user', JSON.stringify(userData));
+      return { error: null };
+    } catch (e: any) {
+      return { error: e.message || 'Registration failed' };
+    }
   };
 
   const signIn = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
-    return { error: error?.message ?? null };
+    try {
+      const response = await authApi.login(email, password);
+      const userData: GGUser = {
+        id: response.data.id,
+        first_name: response.data.first_name,
+        last_name: response.data.last_name,
+        email: response.data.email || email,
+        token: response.data.token,
+        group_id: response.data.group_id || 3,
+      };
+      setUser(userData);
+      localStorage.setItem('gg_user', JSON.stringify(userData));
+      return { error: null };
+    } catch (e: any) {
+      return { error: e.message || 'Invalid email or password' };
+    }
   };
 
   const signOut = async () => {
-    await supabase.auth.signOut();
+    try {
+      await authApi.logout();
+    } catch {
+      // Ignore logout errors
+    }
+    setUser(null);
+    setAuthToken(null);
+    localStorage.removeItem('gg_user');
   };
 
-  const resetPassword = async (email: string) => {
-    const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${window.location.origin}/reset-password`,
-    });
-    return { error: error?.message ?? null };
+  const resetPassword = async (_email: string) => {
+    return { error: 'Please visit gardengrocer.com to reset your password.' };
   };
 
-  const updatePassword = async (password: string) => {
-    const { error } = await supabase.auth.updateUser({ password });
-    return { error: error?.message ?? null };
+  const updatePassword = async (_password: string) => {
+    return { error: 'Please visit gardengrocer.com to change your password.' };
   };
 
   return (
-    <AuthContext.Provider value={{ user, session, loading, signUp, signIn, signOut, resetPassword, updatePassword }}>
+    <AuthContext.Provider value={{ user, loading, signUp, signIn, signOut, resetPassword, updatePassword }}>
       {children}
     </AuthContext.Provider>
   );
