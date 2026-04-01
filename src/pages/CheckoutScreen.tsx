@@ -97,6 +97,27 @@ const CheckoutScreen = ({ onBack, onComplete }: CheckoutScreenProps) => {
     setProcessing(false);
   };
 
+  // Initialize Square card form when payment step is shown
+  useEffect(() => {
+    if (step !== 'payment') return;
+    const initSquare = async () => {
+      try {
+        const appId = import.meta.env.VITE_SQUARE_APP_ID_GG;
+        const locationId = import.meta.env.VITE_SQUARE_LOCATION_ID_GG;
+        if (!appId || !(window as any).Square) return;
+
+        const payments = (window as any).Square.payments(appId, locationId);
+        const card = await payments.card();
+        await card.attach('#square-card-container');
+        (window as any).__squareCard = card;
+      } catch (e) {
+        console.error('Square init error:', e);
+      }
+    };
+    // Small delay to ensure DOM is ready
+    setTimeout(initSquare, 300);
+  }, [step]);
+
   const handlePlaceOrder = async () => {
     if (!user) {
       toast.error('Please sign in to place an order');
@@ -106,16 +127,31 @@ const CheckoutScreen = ({ onBack, onComplete }: CheckoutScreenProps) => {
     setProcessing(true);
 
     try {
-      // The actual payment will be handled by Square Web Payments SDK
-      // For now, we send the order to the API which creates the order
-      // and processes payment server-side
+      // Tokenize card with Square
+      let nonce = '';
+      const squareCard = (window as any).__squareCard;
+      if (squareCard) {
+        const tokenResult = await squareCard.tokenize();
+        if (tokenResult.status === 'OK') {
+          nonce = tokenResult.token;
+        } else {
+          toast.error('Please check your card details');
+          setProcessing(false);
+          return;
+        }
+      } else {
+        toast.error('Payment form not ready. Please wait and try again.');
+        setProcessing(false);
+        return;
+      }
+
       const timeSlot = TIME_SLOTS.find(s => s.id === selectedSlot);
 
       const res = await cartApi.capturePayment({
         order_type: 0,
         parent_id: 0,
         company: 'gg',
-        nonce: 'pending-square-integration', // TODO: Replace with real Square nonce
+        nonce: nonce,
         amount: orderSummary?.gg_payment || total,
         original_subtotal: orderSummary?.subtotal || totalPrice(),
         delivery_date: deliveryDate,
@@ -368,7 +404,7 @@ const CheckoutScreen = ({ onBack, onComplete }: CheckoutScreenProps) => {
                   Payment is processed securely by Square. Your card details are never stored on our servers.
                 </p>
                 <div id="square-card-container" className="min-h-[100px] flex items-center justify-center">
-                  <p className="text-xs text-muted-foreground">Square payment form loading...</p>
+                  <p className="text-xs text-muted-foreground">Loading secure payment form...</p>
                 </div>
               </div>
 
