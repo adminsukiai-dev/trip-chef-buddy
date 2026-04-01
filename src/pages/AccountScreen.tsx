@@ -202,7 +202,7 @@ const AccountScreen = () => {
     toast.success('Signed out successfully');
   };
 
-  const displayName = profile.display_name || user?.user_metadata?.display_name || user?.email || 'Guest User';
+  const displayName = profile.display_name || (user ? `${user.first_name} ${user.last_name}`.trim() : '') || user?.email || 'Guest User';
 
   return (
     <div className="flex flex-col h-full overflow-y-auto px-4 pt-4 pb-20">

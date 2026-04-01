@@ -1,9 +1,9 @@
 import { ArrowLeft, Heart } from 'lucide-react';
 import { motion } from 'framer-motion';
-// Products loaded from API via favorites hook
 import ProductCard from '@/components/ProductCard';
 import { useFavorites } from '@/hooks/useFavorites';
 import { useUserDietaryProfile } from '@/hooks/useUserDietaryProfile';
+import { useProducts, GGProduct } from '@/hooks/useProducts';
 
 interface FavoritesScreenProps {
   onBack: () => void;
@@ -12,9 +12,10 @@ interface FavoritesScreenProps {
 const FavoritesScreen = ({ onBack }: FavoritesScreenProps) => {
   const { favoriteIds, loading, toggleFavorite, isFavorite } = useFavorites();
   const { allergens, familyAllergens, dietaryPreferences } = useUserDietaryProfile();
+  const { products } = useProducts();
   const allAllergens = [...new Set([...allergens, ...familyAllergens])];
 
-  const favoriteProducts = PRODUCTS.filter(p => favoriteIds.has(p.id));
+  const favoriteProducts = products.filter(p => favoriteIds.has(String(p.id)));
 
   return (
     <div className="flex flex-col h-full overflow-hidden">
