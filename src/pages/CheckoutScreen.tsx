@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowLeft, Clock, CreditCard, MapPin, Check, Gift, Wine, Bell } from 'lucide-react';
+import { ArrowLeft, Clock, CreditCard, MapPin, Check, Gift, Wine, Bell, Loader2 } from 'lucide-react';
 import { useCartStore } from '@/store/cartStore';
 import { useAuth } from '@/hooks/useAuth';
 import { useTripProfile } from '@/hooks/useTripProfile';
-import { supabase } from '@/integrations/supabase/client';
+import { cart as cartApi } from '@/lib/api';
 import { toast } from 'sonner';
 import confetti from 'canvas-confetti';
 import AlcoholIdVerification from '@/components/AlcoholIdVerification';
@@ -14,11 +14,8 @@ import { isDisneyResort } from '@/data/products';
 type CheckoutStep = 'delivery' | 'payment' | 'confirmed';
 
 const TIME_SLOTS = [
-  { id: '1', label: 'Early Morning', time: '7:00 AM – 9:00 AM', premium: false },
-  { id: '2', label: 'Morning', time: '9:00 AM – 11:00 AM', premium: false },
-  { id: '3', label: 'Midday', time: '11:00 AM – 1:00 PM', premium: false },
-  { id: '4', label: 'Afternoon', time: '1:00 PM – 3:00 PM', premium: false },
-  { id: '5', label: 'Evening', time: '5:00 PM – 7:00 PM', premium: true },
+  { id: '9', label: 'Morning', time: '9:00 AM - 4:00 PM', apiValue: '9am-4pm' },
+  { id: '4', label: 'Evening', time: '4:00 PM - 10:00 PM', apiValue: '4pm-10pm' },
 ];
 
 interface CheckoutScreenProps {
@@ -31,85 +28,123 @@ const CheckoutScreen = ({ onBack, onComplete }: CheckoutScreenProps) => {
   const [step, setStep] = useState<CheckoutStep>('delivery');
   const [selectedSlot, setSelectedSlot] = useState('');
   const [specialInstructions, setSpecialInstructions] = useState('');
-  const [cardNumber, setCardNumber] = useState('');
-  const [cardExpiry, setCardExpiry] = useState('');
-  const [cardCvc, setCardCvc] = useState('');
-  const [cardName, setCardName] = useState('');
   const [processing, setProcessing] = useState(false);
   const [idMethod, setIdMethod] = useState<'upload' | 'at-delivery' | null>(null);
   const [bellAcknowledged, setBellAcknowledged] = useState(false);
-  const [completedOrderId, setCompletedOrderId] = useState<string | null>(null);
+  const [completedOrderNumber, setCompletedOrderNumber] = useState<string | null>(null);
+  const [deliveryDate, setDeliveryDate] = useState('');
+  const [orderSummary, setOrderSummary] = useState<any>(null);
+  const [resorts, setResorts] = useState<any[]>([]);
+  const [selectedResortId, setSelectedResortId] = useState<number>(0);
 
   const { user } = useAuth();
   const { savedTrip } = useTripProfile();
 
-  const hasAlcohol = items.some(item => item.product.isAlcohol);
+  const hasAlcohol = items.some(item => item.product.isAlcohol || item.product.is_liquor);
   const isDisney = savedTrip?.resort ? isDisneyResort(savedTrip.resort) : false;
   const resortName = savedTrip?.resort || '';
 
-  const deliveryFee = totalPrice() >= 200 ? 0 : 14.99;
+  const deliveryFee = totalPrice() >= 200 ? 0 : 15;
   const freeWine = totalPrice() >= 200;
   const total = totalPrice() + deliveryFee;
 
-  const formatCardNumber = (val: string) => {
-    const digits = val.replace(/\D/g, '').slice(0, 16);
-    return digits.replace(/(\d{4})(?=\d)/g, '$1 ');
-  };
+  // Load resorts
+  useEffect(() => {
+    cartApi.getResortsAndCities().then(res => {
+      setResorts(res.data?.resorts || []);
+      // Try to match saved resort
+      if (savedTrip?.resort) {
+        const match = (res.data?.resorts || []).find((r: any) =>
+          r.resort_name?.toLowerCase().includes(savedTrip.resort.toLowerCase())
+        );
+        if (match) setSelectedResortId(match.id);
+      }
+    }).catch(() => {});
+  }, [savedTrip]);
 
-  const formatExpiry = (val: string) => {
-    const digits = val.replace(/\D/g, '').slice(0, 4);
-    if (digits.length > 2) return digits.slice(0, 2) + '/' + digits.slice(2);
-    return digits;
-  };
+  // Generate delivery dates (next 14 days)
+  const deliveryDates = Array.from({ length: 14 }, (_, i) => {
+    const d = new Date();
+    d.setDate(d.getDate() + i + 2); // Minimum 2 days out
+    return {
+      value: d.toISOString().split('T')[0],
+      label: d.toLocaleDateString('en', { weekday: 'short', month: 'short', day: 'numeric' }),
+    };
+  });
 
-  const canProceedToPayment = selectedSlot && (!isDisney || bellAcknowledged);
+  const canProceedToPayment = selectedSlot && deliveryDate && (!isDisney || bellAcknowledged);
+
+  // Calculate order summary when moving to payment
+  const handleContinueToPayment = async () => {
+    if (!canProceedToPayment) return;
+    setProcessing(true);
+    try {
+      const res = await cartApi.calculateOrderSummary({
+        order_type: 0,
+        parent_id: 0,
+        delivery_date: deliveryDate,
+        delivery_time: selectedSlot === '9' ? '9am-4pm' : '4pm-10pm',
+        gratuity: 0,
+        gift_certificate: '',
+        discount_name: '',
+        use_credit: false,
+      });
+      setOrderSummary(res.data || res);
+      setStep('payment');
+    } catch (e: any) {
+      toast.error(e.message || 'Failed to calculate order');
+    }
+    setProcessing(false);
+  };
 
   const handlePlaceOrder = async () => {
+    if (!user) {
+      toast.error('Please sign in to place an order');
+      return;
+    }
+
     setProcessing(true);
 
     try {
-      let orderId: string | undefined;
+      // The actual payment will be handled by Square Web Payments SDK
+      // For now, we send the order to the API which creates the order
+      // and processes payment server-side
+      const timeSlot = TIME_SLOTS.find(s => s.id === selectedSlot);
 
-      if (user) {
-        const { data: order, error: orderError } = await supabase
-          .from('orders')
-          .insert({
-            user_id: user.id,
-            status: 'confirmed',
-            delivery_slot: TIME_SLOTS.find(s => s.id === selectedSlot)?.time || '',
-            special_instructions: specialInstructions || null,
-            subtotal: totalPrice(),
-            delivery_fee: deliveryFee,
-            total,
-            resort: resortName || null,
-          })
-          .select('id')
-          .single();
+      const res = await cartApi.capturePayment({
+        order_type: 0,
+        parent_id: 0,
+        company: 'gg',
+        nonce: 'pending-square-integration', // TODO: Replace with real Square nonce
+        amount: orderSummary?.gg_payment || total,
+        original_subtotal: orderSummary?.subtotal || totalPrice(),
+        delivery_date: deliveryDate,
+        delivery_time: timeSlot?.apiValue || '9am-4pm',
+        gratuity: 0,
+        gift_certificate: '',
+        discount: 0,
+        discount_name: '',
+        use_credit: false,
+        first_name: user.first_name,
+        last_name: user.last_name,
+        delivery_type: 'resort',
+        resort_id: selectedResortId,
+        cell_phone: '',
+        country: 'us',
+        email: user.email,
+        substitutions: false,
+        device: 'Garden Grocer App - Capacitor',
+        notes: specialInstructions,
+        ip_address: '',
+        app_version: '2.0.0',
+      });
 
-        if (orderError) throw orderError;
-        orderId = order.id;
-
-        const orderItems = items.map(item => ({
-          order_id: order.id,
-          product_id: item.product.id,
-          product_name: item.product.name,
-          product_price: item.product.price,
-          quantity: item.quantity,
-        }));
-
-        const { error: itemsError } = await supabase
-          .from('order_items')
-          .insert(orderItems);
-
-        if (itemsError) throw itemsError;
-      }
-
-      setCompletedOrderId(orderId || null);
+      const orderNumber = res.data?.order_number || res.data?.id;
+      setCompletedOrderNumber(orderNumber ? String(orderNumber) : null);
       setStep('confirmed');
       clearCart();
     } catch (err: any) {
-      toast.error('Failed to save order. Please try again.');
-      console.error('Order save error:', err);
+      toast.error(err.message || 'Payment failed. Please try again.');
     } finally {
       setProcessing(false);
     }
@@ -128,7 +163,6 @@ const CheckoutScreen = ({ onBack, onComplete }: CheckoutScreenProps) => {
     frame();
   }, [step]);
 
-  // Confirmed screen
   if (step === 'confirmed') {
     return (
       <div className="flex flex-col h-full overflow-hidden" style={{ background: 'linear-gradient(180deg, #0D2818 0%, #1a3a24 50%, #FAF7F2 100%)' }}>
@@ -142,55 +176,21 @@ const CheckoutScreen = ({ onBack, onComplete }: CheckoutScreenProps) => {
 
           <motion.h1 initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}
             className="text-2xl font-display font-bold text-white mb-2">Order Confirmed!</motion.h1>
+          {completedOrderNumber && (
+            <motion.p initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }}
+              className="text-accent text-lg font-bold mb-2">Order #{completedOrderNumber}</motion.p>
+          )}
           <motion.p initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.45 }}
             className="text-white/50 text-sm mb-8 max-w-xs">
-            {isDisney
-              ? `Your groceries will be delivered to Bell Services at ${resortName}. We'll text you when it's ready.`
-              : "Your groceries will be delivered to your location. We'll text you when it's ready."
-            }
+            Your groceries will be delivered to {resortName || 'your location'}. We'll text you when it's ready.
           </motion.p>
 
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.6 }}
-            className="w-full max-w-sm space-y-3">
-            <div className="rounded-2xl p-4 space-y-3" style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.1)' }}>
-              <div className="flex items-center gap-3">
-                <Clock size={16} className="text-accent" />
-                <span className="text-sm text-white/70">Delivery: {TIME_SLOTS.find(s => s.id === selectedSlot)?.time || 'Morning'}</span>
-              </div>
-              <div className="flex items-center gap-3">
-                {isDisney ? <Bell size={16} className="text-accent" /> : <MapPin size={16} className="text-accent" />}
-                <span className="text-sm text-white/70">{isDisney ? `Bell Services at ${resortName}` : resortName || 'Your location'}</span>
-              </div>
-              {freeWine && (
-                <div className="flex items-center gap-3">
-                  <Wine size={16} className="text-accent" />
-                  <span className="text-sm text-accent">Complimentary wine included 🍷</span>
-                </div>
-              )}
-            </div>
-
-            <div className="rounded-2xl p-4 text-center" style={{ background: 'rgba(212,168,67,0.1)', border: '1px solid rgba(212,168,67,0.2)' }}>
-              <Gift size={20} className="text-accent mx-auto mb-1" />
-              <p className="text-xs text-accent">You earned 10% off your next order!</p>
-            </div>
-          </motion.div>
-
-          <div className="flex gap-3 mt-8">
-            {completedOrderId && (
-              <motion.button initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.8 }}
-                whileTap={{ scale: 0.97 }} onClick={() => onComplete(completedOrderId)}
-                className="py-3 px-6 rounded-full font-semibold text-sm border"
-                style={{ borderColor: 'rgba(255,255,255,0.2)', color: 'white' }}>
-                Track Order
-              </motion.button>
-            )}
-            <motion.button initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.9 }}
-              whileTap={{ scale: 0.97 }} onClick={() => onComplete()}
-              className="py-3 px-8 rounded-full font-semibold text-sm"
-              style={{ background: 'linear-gradient(135deg, hsl(42 55% 55%), hsl(42 45% 45%))', color: 'white' }}>
-              Back to Grocer
-            </motion.button>
-          </div>
+          <motion.button initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.9 }}
+            whileTap={{ scale: 0.97 }} onClick={() => onComplete()}
+            className="py-3 px-8 rounded-full font-semibold text-sm"
+            style={{ background: 'linear-gradient(135deg, hsl(42 55% 55%), hsl(42 45% 45%))', color: 'white' }}>
+            Back to Shopping
+          </motion.button>
         </div>
       </div>
     );
@@ -198,7 +198,6 @@ const CheckoutScreen = ({ onBack, onComplete }: CheckoutScreenProps) => {
 
   return (
     <div className="flex flex-col h-full overflow-hidden bg-background">
-      {/* Header */}
       <div className="flex items-center gap-3 px-4 pt-4 pb-2">
         <motion.button whileTap={{ scale: 0.9 }} onClick={onBack}
           className="w-9 h-9 rounded-full bg-muted flex items-center justify-center">
@@ -210,7 +209,6 @@ const CheckoutScreen = ({ onBack, onComplete }: CheckoutScreenProps) => {
         </div>
       </div>
 
-      {/* Step indicator */}
       <div className="flex items-center gap-2 px-6 py-3">
         {['Delivery', 'Payment'].map((label, i) => {
           const active = i === (step === 'delivery' ? 0 : 1);
@@ -229,21 +227,36 @@ const CheckoutScreen = ({ onBack, onComplete }: CheckoutScreenProps) => {
         })}
       </div>
 
-      {/* Content */}
       <div className="flex-1 overflow-y-auto px-4 pb-4">
         <AnimatePresence mode="wait">
           {step === 'delivery' && (
             <motion.div key="delivery" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}
               className="space-y-4">
-              
-              {/* Disney Bell Services */}
-              {isDisney && (
-                <BellServicesCard resortName={resortName} onAcknowledge={setBellAcknowledged} />
-              )}
 
+              {isDisney && <BellServicesCard resortName={resortName} onAcknowledge={setBellAcknowledged} />}
+
+              {/* Delivery Date */}
               <div>
                 <h2 className="text-sm font-semibold mb-3 flex items-center gap-2">
-                  <Clock size={16} className="text-accent" /> Choose a delivery window
+                  <MapPin size={16} className="text-accent" /> Delivery Date
+                </h2>
+                <div className="grid grid-cols-2 gap-2">
+                  {deliveryDates.slice(0, 8).map(d => (
+                    <motion.button key={d.value} whileTap={{ scale: 0.98 }}
+                      onClick={() => setDeliveryDate(d.value)}
+                      className={`p-3 rounded-xl border text-left text-sm transition-all ${
+                        deliveryDate === d.value ? 'border-accent bg-accent/5' : 'border-border hover:border-accent/30'
+                      }`}>
+                      {d.label}
+                    </motion.button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Time Slot */}
+              <div>
+                <h2 className="text-sm font-semibold mb-3 flex items-center gap-2">
+                  <Clock size={16} className="text-accent" /> Delivery Window
                 </h2>
                 <div className="space-y-2">
                   {TIME_SLOTS.map(slot => (
@@ -256,15 +269,12 @@ const CheckoutScreen = ({ onBack, onComplete }: CheckoutScreenProps) => {
                         <p className="text-sm font-medium">{slot.label}</p>
                         <p className="text-xs text-muted-foreground">{slot.time}</p>
                       </div>
-                      <div className="flex items-center gap-2">
-                        {slot.premium && <span className="text-[10px] px-2 py-0.5 rounded-full bg-accent/10 text-accent font-medium">Popular</span>}
-                        {selectedSlot === slot.id && (
-                          <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }}
-                            className="w-5 h-5 rounded-full bg-accent flex items-center justify-center">
-                            <Check size={12} className="text-white" />
-                          </motion.div>
-                        )}
-                      </div>
+                      {selectedSlot === slot.id && (
+                        <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }}
+                          className="w-5 h-5 rounded-full bg-accent flex items-center justify-center">
+                          <Check size={12} className="text-white" />
+                        </motion.div>
+                      )}
                     </motion.button>
                   ))}
                 </div>
@@ -272,19 +282,12 @@ const CheckoutScreen = ({ onBack, onComplete }: CheckoutScreenProps) => {
 
               <div>
                 <h2 className="text-sm font-semibold mb-2">Special instructions</h2>
-                <textarea
-                  value={specialInstructions}
-                  onChange={e => setSpecialInstructions(e.target.value)}
-                  placeholder="Leave at bell services, call on arrival, etc."
-                  rows={3}
-                  className="w-full bg-muted/50 border border-border rounded-xl px-4 py-3 text-sm outline-none focus:border-accent/50 transition-colors resize-none placeholder:text-muted-foreground"
-                />
+                <textarea value={specialInstructions} onChange={e => setSpecialInstructions(e.target.value)}
+                  placeholder="Leave at bell services, call on arrival, etc." rows={3}
+                  className="w-full bg-muted/50 border border-border rounded-xl px-4 py-3 text-sm outline-none focus:border-accent/50 transition-colors resize-none placeholder:text-muted-foreground" />
               </div>
 
-              {/* Alcohol ID Verification */}
-              {hasAlcohol && (
-                <AlcoholIdVerification onComplete={setIdMethod} />
-              )}
+              {hasAlcohol && <AlcoholIdVerification onComplete={setIdMethod} />}
 
               {/* Order summary */}
               <div className="rounded-xl border border-border p-4 space-y-2 text-sm">
@@ -298,7 +301,7 @@ const CheckoutScreen = ({ onBack, onComplete }: CheckoutScreenProps) => {
                 </div>
                 {freeWine && (
                   <div className="flex justify-between text-accent">
-                    <span>🍷 Complimentary wine</span>
+                    <span>Complimentary wine</span>
                     <span className="font-medium">Included</span>
                   </div>
                 )}
@@ -309,11 +312,11 @@ const CheckoutScreen = ({ onBack, onComplete }: CheckoutScreenProps) => {
               </div>
 
               <motion.button whileTap={{ scale: 0.97 }}
-                onClick={() => canProceedToPayment && setStep('payment')}
-                disabled={!canProceedToPayment || (hasAlcohol && !idMethod)}
-                className="w-full py-3.5 rounded-full font-semibold text-sm disabled:opacity-30 transition-opacity"
+                onClick={handleContinueToPayment}
+                disabled={!canProceedToPayment || (hasAlcohol && !idMethod) || processing}
+                className="w-full py-3.5 rounded-full font-semibold text-sm disabled:opacity-30 transition-opacity flex items-center justify-center gap-2"
                 style={{ background: 'linear-gradient(135deg, hsl(42 55% 55%), hsl(42 45% 45%))', color: 'white' }}>
-                Continue to Payment
+                {processing ? <><Loader2 size={16} className="animate-spin" /> Calculating...</> : 'Continue to Payment'}
               </motion.button>
             </motion.div>
           )}
@@ -321,48 +324,52 @@ const CheckoutScreen = ({ onBack, onComplete }: CheckoutScreenProps) => {
           {step === 'payment' && (
             <motion.div key="payment" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}
               className="space-y-4">
-              <div>
-                <h2 className="text-sm font-semibold mb-3 flex items-center gap-2">
-                  <CreditCard size={16} className="text-accent" /> Payment details
-                </h2>
-                <div className="space-y-3">
-                  <div>
-                    <label className="text-xs text-muted-foreground mb-1 block">Name on card</label>
-                    <input type="text" value={cardName} onChange={e => setCardName(e.target.value)}
-                      placeholder="John Doe"
-                      className="w-full bg-muted/50 border border-border rounded-xl px-4 py-3 text-sm outline-none focus:border-accent/50 transition-colors placeholder:text-muted-foreground" />
-                  </div>
-                  <div>
-                    <label className="text-xs text-muted-foreground mb-1 block">Card number</label>
-                    <input type="text" value={cardNumber} onChange={e => setCardNumber(formatCardNumber(e.target.value))}
-                      placeholder="4242 4242 4242 4242"
-                      className="w-full bg-muted/50 border border-border rounded-xl px-4 py-3 text-sm outline-none focus:border-accent/50 transition-colors placeholder:text-muted-foreground font-mono" />
-                  </div>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <label className="text-xs text-muted-foreground mb-1 block">Expiry</label>
-                      <input type="text" value={cardExpiry} onChange={e => setCardExpiry(formatExpiry(e.target.value))}
-                        placeholder="MM/YY"
-                        className="w-full bg-muted/50 border border-border rounded-xl px-4 py-3 text-sm outline-none focus:border-accent/50 transition-colors placeholder:text-muted-foreground font-mono" />
-                    </div>
-                    <div>
-                      <label className="text-xs text-muted-foreground mb-1 block">CVC</label>
-                      <input type="text" value={cardCvc} onChange={e => setCardCvc(e.target.value.replace(/\D/g, '').slice(0, 4))}
-                        placeholder="123"
-                        className="w-full bg-muted/50 border border-border rounded-xl px-4 py-3 text-sm outline-none focus:border-accent/50 transition-colors placeholder:text-muted-foreground font-mono" />
-                    </div>
-                  </div>
-                </div>
-              </div>
 
-              {/* Mini summary */}
-              <div className="rounded-xl border border-accent/20 p-4 flex items-center justify-between"
-                style={{ background: 'rgba(212,168,67,0.05)' }}>
-                <div>
-                  <p className="text-sm font-bold">${total.toFixed(2)}</p>
-                  <p className="text-xs text-muted-foreground">{totalItems()} items · {TIME_SLOTS.find(s => s.id === selectedSlot)?.label}</p>
+              {/* Order Summary from API */}
+              {orderSummary && (
+                <div className="rounded-xl border border-accent/20 p-4 space-y-2 text-sm"
+                  style={{ background: 'rgba(212,168,67,0.05)' }}>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Subtotal</span>
+                    <span>${Number(orderSummary.subtotal || 0).toFixed(2)}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Delivery</span>
+                    <span>${Number(orderSummary.delivery_fee || 0).toFixed(2)}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Tax</span>
+                    <span>${Number(orderSummary.sales_tax || 0).toFixed(2)}</span>
+                  </div>
+                  {orderSummary.discount && orderSummary.discount !== 0 && (
+                    <div className="flex justify-between text-primary">
+                      <span>Discount ({orderSummary.discount_name})</span>
+                      <span>-${Math.abs(Number(orderSummary.discount)).toFixed(2)}</span>
+                    </div>
+                  )}
+                  <div className="border-t border-border pt-2 flex justify-between font-bold">
+                    <span>Total</span>
+                    <span className="text-lg">${Number(orderSummary.grand_total || total).toFixed(2)}</span>
+                  </div>
+                  {orderSummary.alcohol_payment > 0 && (
+                    <div className="text-xs text-muted-foreground mt-2 pt-2 border-t border-border">
+                      <p>Grocery charge: ${Number(orderSummary.gg_payment).toFixed(2)} (Garden Grocer)</p>
+                      <p>Alcohol charge: ${Number(orderSummary.alcohol_payment).toFixed(2)} (Golden Ox Liquors)</p>
+                    </div>
+                  )}
                 </div>
-                {freeWine && <span className="text-sm">🍷</span>}
+              )}
+
+              {/* Square Payment Form placeholder */}
+              <div className="rounded-xl border border-border p-6 text-center space-y-3">
+                <CreditCard size={32} className="mx-auto text-accent" />
+                <h3 className="font-semibold">Secure Payment</h3>
+                <p className="text-xs text-muted-foreground">
+                  Payment is processed securely by Square. Your card details are never stored on our servers.
+                </p>
+                <div id="square-card-container" className="min-h-[100px] flex items-center justify-center">
+                  <p className="text-xs text-muted-foreground">Square payment form loading...</p>
+                </div>
               </div>
 
               <div className="flex gap-3">
@@ -372,23 +379,21 @@ const CheckoutScreen = ({ onBack, onComplete }: CheckoutScreenProps) => {
                 </motion.button>
                 <motion.button whileTap={{ scale: 0.97 }}
                   onClick={handlePlaceOrder}
-                  disabled={!cardName || cardNumber.length < 19 || cardExpiry.length < 5 || cardCvc.length < 3 || processing}
+                  disabled={processing}
                   className="flex-1 py-3.5 rounded-full font-semibold text-sm disabled:opacity-30 transition-opacity relative overflow-hidden"
                   style={{ background: 'linear-gradient(135deg, hsl(42 55% 55%), hsl(42 45% 45%))', color: 'white' }}>
                   {processing ? (
-                    <motion.span initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex items-center justify-center gap-2">
-                      <motion.span animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1, ease: 'linear' }}
-                        className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full inline-block" />
-                      Processing...
-                    </motion.span>
+                    <span className="flex items-center justify-center gap-2">
+                      <Loader2 size={16} className="animate-spin" /> Processing...
+                    </span>
                   ) : (
-                    `Place Order · $${total.toFixed(2)}`
+                    `Place Order · $${Number(orderSummary?.grand_total || total).toFixed(2)}`
                   )}
                 </motion.button>
               </div>
 
               <p className="text-[11px] text-center text-muted-foreground">
-                🔒 This is a demo — no real charges will be made
+                Payments secured by Square
               </p>
             </motion.div>
           )}
