@@ -20,7 +20,7 @@ const FavoritesScreen = ({ onBack }: FavoritesScreenProps) => {
   useEffect(() => {
     if (favoriteIds.size === 0) { setFavoriteProducts([]); return; }
     const ids = Array.from(favoriteIds);
-    Promise.all(ids.map(id => productsApi.getById(Number(id)).then(res => mapProduct(res.data || res)).catch(() => null)))
+    Promise.all(ids.map(id => productsApi.getDetails(Number(id)).then(res => mapProduct(res.data || res)).catch(() => null)))
       .then(results => setFavoriteProducts(results.filter(Boolean) as GGProduct[]));
   }, [favoriteIds]);
 
