@@ -63,7 +63,7 @@ const ProfileEditor = ({ displayName, avatarUrl, onUpdate }: ProfileEditorProps)
       const { error } = await supabase
         .from('profiles')
         .update({ display_name: name.trim(), updated_at: new Date().toISOString() })
-        .eq('id', user.id);
+        .eq('id', String(user.id));
 
       if (error) throw error;
 

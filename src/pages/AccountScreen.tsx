@@ -168,7 +168,7 @@ const AccountScreen = () => {
     const { data } = await supabase
       .from('profiles')
       .select('display_name, avatar_url')
-      .eq('id', user.id)
+      .eq('id', String(user.id))
       .single();
     if (data) setProfile(data);
   }, [user]);

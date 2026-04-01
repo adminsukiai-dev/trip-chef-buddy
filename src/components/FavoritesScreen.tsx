@@ -3,7 +3,9 @@ import { motion } from 'framer-motion';
 import ProductCard from '@/components/ProductCard';
 import { useFavorites } from '@/hooks/useFavorites';
 import { useUserDietaryProfile } from '@/hooks/useUserDietaryProfile';
-import { useProducts, GGProduct } from '@/hooks/useProducts';
+import { useState, useEffect } from 'react';
+import { products as productsApi } from '@/lib/api';
+import { mapProduct, GGProduct } from '@/hooks/useProducts';
 
 interface FavoritesScreenProps {
   onBack: () => void;
@@ -12,10 +14,15 @@ interface FavoritesScreenProps {
 const FavoritesScreen = ({ onBack }: FavoritesScreenProps) => {
   const { favoriteIds, loading, toggleFavorite, isFavorite } = useFavorites();
   const { allergens, familyAllergens, dietaryPreferences } = useUserDietaryProfile();
-  const { products } = useProducts();
+  const [favoriteProducts, setFavoriteProducts] = useState<GGProduct[]>([]);
   const allAllergens = [...new Set([...allergens, ...familyAllergens])];
 
-  const favoriteProducts = products.filter(p => favoriteIds.has(String(p.id)));
+  useEffect(() => {
+    if (favoriteIds.size === 0) { setFavoriteProducts([]); return; }
+    const ids = Array.from(favoriteIds);
+    Promise.all(ids.map(id => productsApi.getById(Number(id)).then(res => mapProduct(res.data || res)).catch(() => null)))
+      .then(results => setFavoriteProducts(results.filter(Boolean) as GGProduct[]));
+  }, [favoriteIds]);
 
   return (
     <div className="flex flex-col h-full overflow-hidden">
