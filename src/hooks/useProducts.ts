@@ -78,22 +78,33 @@ export function useCategories() {
   return { categories, loading };
 }
 
-export function useCategoryProducts(categoryId: number | null) {
+export function useCategoryProducts(aisleId: number | null) {
   const [products, setProducts] = useState<GGProduct[]>([]);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    if (!categoryId) return;
+    if (!aisleId) {
+      setProducts([]);
+      return;
+    }
     setLoading(true);
-    productsApi.getCategoryProducts(categoryId)
+    productsApi.getAisleProducts(aisleId)
       .then(res => {
-        const raw = res.data || res || [];
-        const prods = raw.map(mapProduct);
-        setProducts(prods);
+        // Structure: data.attributes.categories[].attributes.products[]
+        const data = res.data || res || {};
+        const attrs = data.attributes || data;
+        const categories = attrs.categories || [];
+        const allProds: GGProduct[] = [];
+        for (const cat of categories) {
+          const catAttrs = cat.attributes || cat;
+          const prods = catAttrs.products || [];
+          allProds.push(...prods.map(mapProduct));
+        }
+        setProducts(allProds);
       })
       .catch(() => setProducts([]))
       .finally(() => setLoading(false));
-  }, [categoryId]);
+  }, [aisleId]);
 
   return { products, loading };
 }
@@ -111,10 +122,21 @@ export function useProductSearch() {
     try {
       const res = await productsApi.search(query);
       const raw = res.data || res || [];
-      const prods = raw.map(mapProduct);
+      const prods = Array.isArray(raw) ? raw.map(mapProduct) : [];
       setResults(prods);
     } catch {
-      setResults([]);
+      // Search endpoint may fail without auth — fall back to filtering all products
+      try {
+        const res = await productsApi.filterProducts({});
+        const raw = res.data || res || [];
+        const allProds = Array.isArray(raw) ? raw.map(mapProduct) : [];
+        const q = query.toLowerCase();
+        setResults(allProds.filter(p =>
+          p.name.toLowerCase().includes(q) || (p.brand || '').toLowerCase().includes(q)
+        ));
+      } catch {
+        setResults([]);
+      }
     } finally {
       setLoading(false);
     }
