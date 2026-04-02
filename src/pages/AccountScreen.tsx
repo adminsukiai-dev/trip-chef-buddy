@@ -1,9 +1,8 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState } from 'react';
 import { User, Heart, Shield, Gift, ChevronRight, LogOut, MapPin, Users, Pencil, Check, X } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useTripProfile } from '@/hooks/useTripProfile';
 import { useFavorites } from '@/hooks/useFavorites';
-import { supabase } from '@/integrations/supabase/client';
 import { ORLANDO_RESORTS } from '@/data/products';
 import AuthPage from '@/pages/AuthPage';
 import ProfileEditor from '@/components/ProfileEditor';
@@ -161,21 +160,6 @@ const AccountScreen = () => {
   const [showAuth, setShowAuth] = useState(false);
   const [showProfileFamily, setShowProfileFamily] = useState(false);
   const [showFavorites, setShowFavorites] = useState(false);
-  const [profile, setProfile] = useState<{ display_name: string | null; avatar_url: string | null }>({ display_name: null, avatar_url: null });
-
-  const fetchProfile = useCallback(async () => {
-    if (!user) return;
-    const { data } = await supabase
-      .from('profiles')
-      .select('display_name, avatar_url')
-      .eq('id', String(user.id))
-      .single();
-    if (data) setProfile(data);
-  }, [user]);
-
-  useEffect(() => {
-    fetchProfile();
-  }, [fetchProfile]);
 
   if (loading) {
     return (
@@ -202,7 +186,7 @@ const AccountScreen = () => {
     toast.success('Signed out successfully');
   };
 
-  const displayName = profile.display_name || (user ? `${user.first_name} ${user.last_name}`.trim() : '') || user?.email || 'Guest User';
+  const displayName = (user ? `${user.first_name} ${user.last_name}`.trim() : '') || user?.email || 'Guest User';
 
   return (
     <div className="flex flex-col h-full overflow-y-auto px-4 pt-4 pb-20">
@@ -211,8 +195,6 @@ const AccountScreen = () => {
       {user ? (
         <ProfileEditor
           displayName={displayName}
-          avatarUrl={profile.avatar_url}
-          onUpdate={fetchProfile}
         />
       ) : (
         <div className="grocer-input-card flex items-center gap-4 mb-4">

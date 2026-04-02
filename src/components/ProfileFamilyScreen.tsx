@@ -1,9 +1,28 @@
 import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowLeft, Check, Plus, X, Wheat, Milk, Egg, Fish, TreePine, Shell, AlertTriangle, Leaf, Baby, UserPlus, Trash2, Loader2 } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
+
+/* ─── localStorage helpers ─── */
+const STORAGE_KEY_PREFIX = 'gg_profile_';
+
+function loadLocal<T>(userId: number | string, key: string, fallback: T): T {
+  try {
+    const raw = localStorage.getItem(`${STORAGE_KEY_PREFIX}${userId}_${key}`);
+    return raw ? JSON.parse(raw) : fallback;
+  } catch {
+    return fallback;
+  }
+}
+
+function saveLocal<T>(userId: number | string, key: string, value: T): void {
+  try {
+    localStorage.setItem(`${STORAGE_KEY_PREFIX}${userId}_${key}`, JSON.stringify(value));
+  } catch {
+    // storage full — silently ignore
+  }
+}
 
 const DIETARY_OPTIONS = [
   { id: 'vegetarian', label: 'Vegetarian', emoji: '🥬', desc: 'No meat or fish' },
@@ -52,62 +71,39 @@ const ProfileFamilyScreen = ({ onBack }: ProfileFamilyScreenProps) => {
   const [allergens, setAllergens] = useState<string[]>([]);
   const [familyMembers, setFamilyMembers] = useState<FamilyMember[]>([]);
   const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
   const [showAddMember, setShowAddMember] = useState(false);
   const [newMemberName, setNewMemberName] = useState('');
   const [newMemberType, setNewMemberType] = useState<'adult' | 'child'>('adult');
 
-  const fetchProfile = useCallback(async () => {
+  const loadProfile = useCallback(() => {
     if (!user) return;
     setLoading(true);
-    const { data } = await supabase
-      .from('profiles')
-      .select('dietary_preferences, allergens, family_members')
-      .eq('id', String(user.id))
-      .single();
-
-    if (data) {
-      setDietary((data as any).dietary_preferences || []);
-      setAllergens((data as any).allergens || []);
-      setFamilyMembers(((data as any).family_members as FamilyMember[]) || []);
-    }
+    setDietary(loadLocal<string[]>(user.id, 'dietary', []));
+    setAllergens(loadLocal<string[]>(user.id, 'allergens', []));
+    setFamilyMembers(loadLocal<FamilyMember[]>(user.id, 'family_members', []));
     setLoading(false);
   }, [user]);
 
   useEffect(() => {
-    fetchProfile();
-  }, [fetchProfile]);
-
-  const save = async (updates: Record<string, unknown>) => {
-    if (!user) return;
-    setSaving(true);
-    const { error } = await supabase
-      .from('profiles')
-      .update({ ...updates, updated_at: new Date().toISOString() } as any)
-      .eq('id', String(user.id));
-
-    if (error) {
-      toast.error('Failed to save');
-    } else {
-      toast.success('Saved');
-    }
-    setSaving(false);
-  };
+    loadProfile();
+  }, [loadProfile]);
 
   const toggleDietary = (id: string) => {
+    if (!user) return;
     const next = dietary.includes(id) ? dietary.filter(d => d !== id) : [...dietary, id];
     setDietary(next);
-    save({ dietary_preferences: next });
+    saveLocal(user.id, 'dietary', next);
   };
 
   const toggleAllergen = (id: string) => {
+    if (!user) return;
     const next = allergens.includes(id) ? allergens.filter(a => a !== id) : [...allergens, id];
     setAllergens(next);
-    save({ allergens: next });
+    saveLocal(user.id, 'allergens', next);
   };
 
   const addFamilyMember = () => {
-    if (!newMemberName.trim()) return;
+    if (!user || !newMemberName.trim()) return;
     const member: FamilyMember = {
       id: crypto.randomUUID(),
       name: newMemberName.trim(),
@@ -117,35 +113,38 @@ const ProfileFamilyScreen = ({ onBack }: ProfileFamilyScreenProps) => {
     };
     const next = [...familyMembers, member];
     setFamilyMembers(next);
-    save({ family_members: next });
+    saveLocal(user.id, 'family_members', next);
     setNewMemberName('');
     setShowAddMember(false);
   };
 
   const removeFamilyMember = (id: string) => {
+    if (!user) return;
     const next = familyMembers.filter(m => m.id !== id);
     setFamilyMembers(next);
-    save({ family_members: next });
+    saveLocal(user.id, 'family_members', next);
   };
 
   const toggleMemberDietary = (memberId: string, dietId: string) => {
+    if (!user) return;
     const next = familyMembers.map(m => {
       if (m.id !== memberId) return m;
       const d = m.dietary.includes(dietId) ? m.dietary.filter(x => x !== dietId) : [...m.dietary, dietId];
       return { ...m, dietary: d };
     });
     setFamilyMembers(next);
-    save({ family_members: next });
+    saveLocal(user.id, 'family_members', next);
   };
 
   const toggleMemberAllergen = (memberId: string, allergenId: string) => {
+    if (!user) return;
     const next = familyMembers.map(m => {
       if (m.id !== memberId) return m;
       const a = m.allergens.includes(allergenId) ? m.allergens.filter(x => x !== allergenId) : [...m.allergens, allergenId];
       return { ...m, allergens: a };
     });
     setFamilyMembers(next);
-    save({ family_members: next });
+    saveLocal(user.id, 'family_members', next);
   };
 
   if (loading) {
@@ -168,7 +167,6 @@ const ProfileFamilyScreen = ({ onBack }: ProfileFamilyScreenProps) => {
           <h1 className="text-xl font-display font-bold">Profile & Family</h1>
           <p className="text-xs text-muted-foreground">Dietary preferences & allergen alerts</p>
         </div>
-        {saving && <Loader2 size={16} className="text-accent animate-spin" />}
       </div>
 
       {/* Tabs */}
